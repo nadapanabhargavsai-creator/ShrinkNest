@@ -4,12 +4,13 @@
 // ==========================================
 
 import { auth, db } from "./firebase-config.js";
+import { calculateSavedPercentage } from "./utils.js";
 
 import {
     collection,
     addDoc,
     serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const uploadInput = document.getElementById("videoFile");
 const compressBtn = document.getElementById("compressBtn");
@@ -155,22 +156,27 @@ compressBtn.addEventListener("click", async () => {
             }
         );
 
-        const newSize = compressedBlob.size;
+        if (compressedBlob.size >= selectedFile.size) {
+            compressedBlob = selectedFile;
+        }
+
+        const finalSize = compressedBlob.size;
 
         compressedSize.textContent =
-            (newSize / (1024 * 1024)).toFixed(2) + " MB";
+            (finalSize / (1024 * 1024)).toFixed(2) + " MB";
 
-        const saved = (
-            (
-                (selectedFile.size - newSize) /
-                selectedFile.size
-            ) * 100
-        ).toFixed(1);
+        const saved = calculateSavedPercentage(selectedFile.size, finalSize);
 
         savedPercent.textContent = saved + "%";
 
-                // Enable download
+        // Enable download
         downloadBtn.style.display = "inline-block";
+
+        // Show result card
+        const resultCard = document.getElementById("resultCard");
+        if (resultCard) {
+            resultCard.style.display = "block";
+        }
 
         // Save history to Firestore
         if (auth.currentUser) {
@@ -180,7 +186,7 @@ compressBtn.addEventListener("click", async () => {
                 uid: auth.currentUser.uid,
                 filename: selectedFile.name,
                 originalSize: (selectedFile.size / (1024 * 1024)).toFixed(2) + " MB",
-                compressedSize: (newSize / (1024 * 1024)).toFixed(2) + " MB",
+                compressedSize: (finalSize / (1024 * 1024)).toFixed(2) + " MB",
                 saved: saved,
                 type: "video",
                 date: new Date().toLocaleDateString(),

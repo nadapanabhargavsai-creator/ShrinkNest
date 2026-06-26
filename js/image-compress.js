@@ -4,12 +4,13 @@
 // ==========================================
 
 import { auth, db } from "./firebase-config.js";
+import { calculateSavedPercentage, formatFileSize } from "./utils.js";
 
 import {
     collection,
     addDoc,
     serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const uploadInput = document.getElementById("imageFile");
 const qualitySlider = document.getElementById("qualitySlider");
@@ -38,8 +39,7 @@ uploadInput.addEventListener("change", (e) => {
 
     beforePreview.src = URL.createObjectURL(selectedFile);
 
-    originalSize.textContent =
-        (selectedFile.size / 1024).toFixed(2) + " KB";
+    originalSize.textContent = formatFileSize(selectedFile.size);
 
 });
 
@@ -62,40 +62,43 @@ compressBtn.addEventListener("click", async () => {
 
     try {
 
-        const quality =
-            Number(qualitySlider.value) / 100;
+        const quality = Number(qualitySlider.value) / 100;
 
-        const options = {
+        if (quality === 1.0) {
+            // 100% quality means keep original image
+            compressedFile = selectedFile;
+        } else {
+            const targetSizeMB = (selectedFile.size / (1024 * 1024)) * quality;
+            const options = {
+                maxSizeMB: Math.max(0.01, targetSizeMB),
+                maxWidthOrHeight: 1920,
+                useWebWorker: true,
+                initialQuality: quality,
+                alwaysKeepResolution: true
+            };
 
-            maxSizeMB: 5,
-            maxWidthOrHeight: 1920,
-            useWebWorker: true,
-            initialQuality: quality
+            compressedFile = await imageCompression(selectedFile, options);
 
-        };
+            // Fallback to original if compressed version is somehow larger
+            if (compressedFile.size >= selectedFile.size) {
+                compressedFile = selectedFile;
+            }
+        }
 
-        compressedFile =
-            await imageCompression(
-                selectedFile,
-                options
-            );
+        afterPreview.src = URL.createObjectURL(compressedFile);
+        compressedSize.textContent = formatFileSize(compressedFile.size);
 
-        afterPreview.src =
-            URL.createObjectURL(compressedFile);
-
-        compressedSize.textContent =
-            (compressedFile.size / 1024).toFixed(2) + " KB";
-
-        const saved = (
-            (
-                (selectedFile.size - compressedFile.size) /
-                selectedFile.size
-            ) * 100
-        ).toFixed(1);
-
+        const saved = calculateSavedPercentage(selectedFile.size, compressedFile.size);
         savedPercent.textContent = saved + "%";
-                // Enable Download Button
+
+        // Enable Download Button
         downloadBtn.style.display = "inline-block";
+
+        // Show Result Card
+        const resultCard = document.getElementById("resultCard");
+        if (resultCard) {
+            resultCard.style.display = "block";
+        }
 
         // Save History (if user is logged in)
         if (auth.currentUser) {
@@ -104,8 +107,8 @@ compressBtn.addEventListener("click", async () => {
 
                 uid: auth.currentUser.uid,
                 filename: selectedFile.name,
-                originalSize: (selectedFile.size / 1024).toFixed(2) + " KB",
-                compressedSize: (compressedFile.size / 1024).toFixed(2) + " KB",
+                originalSize: formatFileSize(selectedFile.size),
+                compressedSize: formatFileSize(compressedFile.size),
                 saved: saved,
                 type: "image",
                 date: new Date().toLocaleDateString(),

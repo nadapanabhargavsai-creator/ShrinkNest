@@ -20,7 +20,7 @@ export function formatFileSize(bytes) {
 // Calculate compression percentage
 export function calculateSavedPercentage(originalSize, compressedSize) {
 
-    if (originalSize <= 0) return 0;
+    if (originalSize <= 0 || compressedSize >= originalSize) return "0.0";
 
     return (
         ((originalSize - compressedSize) / originalSize) * 100

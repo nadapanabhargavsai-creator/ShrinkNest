@@ -4,12 +4,13 @@
 // ==========================================
 
 import { auth, db } from "./firebase-config.js";
+import { calculateSavedPercentage, formatFileSize } from "./utils.js";
 
 import {
     collection,
     addDoc,
     serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const uploadInput = document.getElementById("pdfFile");
 const compressBtn = document.getElementById("compressBtn");
@@ -37,8 +38,7 @@ uploadInput.addEventListener("change", (e) => {
 
     fileName.textContent = selectedFile.name;
 
-    originalSize.textContent =
-        (selectedFile.size / 1024).toFixed(2) + " KB";
+    originalSize.textContent = formatFileSize(selectedFile.size);
 
 });
 
@@ -59,40 +59,95 @@ compressBtn.addEventListener("click", async () => {
     compressBtn.disabled = true;
     compressBtn.textContent = "Compressing...";
 
+    const progressContainer = document.getElementById("progressContainer");
+    const progressBar = document.getElementById("progressBar");
+
+    if (progressContainer) {
+        progressContainer.style.display = "block";
+    }
+    if (progressBar) {
+        progressBar.style.width = "0%";
+    }
+
     try {
 
-        const arrayBuffer =
-            await selectedFile.arrayBuffer();
+        const arrayBuffer = await selectedFile.arrayBuffer();
 
-        const pdfDoc =
-            await PDFLib.PDFDocument.load(arrayBuffer);
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        const totalPages = pdf.numPages;
 
-        const pdfBytes =
-            await pdfDoc.save({
-                useObjectStreams: true
+        // Initialize pdf-lib for output
+        const newPdfDoc = await PDFLib.PDFDocument.create();
+
+        // Get compression level options
+        const level = levelSelect.value; // "low", "medium", "high"
+        let scale = 1.2;
+        let quality = 0.7;
+
+        if (level === "low") {
+            scale = 1.5;
+            quality = 0.85;
+        } else if (level === "medium") {
+            scale = 1.0;
+            quality = 0.60;
+        } else if (level === "high") {
+            scale = 0.8;
+            quality = 0.35;
+        }
+
+        for (let i = 1; i <= totalPages; i++) {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            await page.render(renderContext).promise;
+
+            // Compress page canvas to JPEG Data URL
+            const dataUrl = canvas.toDataURL("image/jpeg", quality);
+            const img = await newPdfDoc.embedJpg(dataUrl);
+
+            const newPage = newPdfDoc.addPage([viewport.width, viewport.height]);
+            newPage.drawImage(img, {
+                x: 0,
+                y: 0,
+                width: viewport.width,
+                height: viewport.height
             });
 
-        compressedBlob = new Blob(
-            [pdfBytes],
-            { type: "application/pdf" }
-        );
+            if (progressBar) {
+                progressBar.style.width = `${Math.round((i / totalPages) * 100)}%`;
+            }
+        }
 
-        const newSize =
-            compressedBlob.size;
+        const pdfBytes = await newPdfDoc.save();
+        compressedBlob = new Blob([pdfBytes], { type: "application/pdf" });
 
-        compressedSize.textContent =
-            (newSize / 1024).toFixed(2) + " KB";
+        const newSize = compressedBlob.size;
 
-        const saved =
-            (
-                ((selectedFile.size - newSize) /
-                    selectedFile.size) *
-                100
-            ).toFixed(1);
+        compressedSize.textContent = formatFileSize(newSize);
 
+        const saved = calculateSavedPercentage(selectedFile.size, newSize);
         savedPercent.textContent = saved + "%";
-                // Enable Download Button
+
+        // Enable Download Button
         downloadBtn.style.display = "inline-block";
+
+        // Show Result Card
+        const resultCard = document.getElementById("resultCard");
+        if (resultCard) {
+            resultCard.style.display = "block";
+        }
 
         // Save History (if logged in)
         if (auth.currentUser) {
@@ -101,8 +156,8 @@ compressBtn.addEventListener("click", async () => {
 
                 uid: auth.currentUser.uid,
                 filename: selectedFile.name,
-                originalSize: (selectedFile.size / 1024).toFixed(2) + " KB",
-                compressedSize: (newSize / 1024).toFixed(2) + " KB",
+                originalSize: formatFileSize(selectedFile.size),
+                compressedSize: formatFileSize(newSize),
                 saved: saved,
                 type: "pdf",
                 date: new Date().toLocaleDateString(),
@@ -122,6 +177,9 @@ compressBtn.addEventListener("click", async () => {
 
         compressBtn.disabled = false;
         compressBtn.textContent = "Compress PDF";
+        if (progressBar) {
+            progressBar.style.width = "100%";
+        }
 
     }
 
