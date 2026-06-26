@@ -1,0 +1,46 @@
+# ==========================================
+# ShrinkNest .gitignore
+# ==========================================
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Environment files (if used later)
+.env
+.env.local
+.env.production
+.env.development
+
+# Firebase local files
+.firebase/
+firebase-debug.log
+
+# Node.js (not used now, but safe to ignore)
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# IDEs
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# OS generated files
+ehthumbs.db
+Icon?
+
+# ==========================================
+# End of .gitignore
+# ==========================================
