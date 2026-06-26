@@ -23,8 +23,26 @@ const savedPercent = document.getElementById("savedPercent");
 
 const downloadBtn = document.getElementById("downloadBtn");
 
+const compressMethodRadios = document.getElementsByName("compressMethod");
+const levelControlGroup = document.getElementById("levelControlGroup");
+const sizeControlGroup = document.getElementById("sizeControlGroup");
+const targetSizeInput = document.getElementById("targetSizeInput");
+
 let selectedFile = null;
 let compressedBlob = null;
+
+// Toggle options visibility
+compressMethodRadios.forEach(radio => {
+    radio.addEventListener("change", (e) => {
+        if (e.target.value === "level") {
+            levelControlGroup.style.display = "flex";
+            sizeControlGroup.style.display = "none";
+        } else {
+            levelControlGroup.style.display = "none";
+            sizeControlGroup.style.display = "flex";
+        }
+    });
+});
 
 // ==========================================
 // FILE SELECT
@@ -82,20 +100,40 @@ compressBtn.addEventListener("click", async () => {
         // Initialize pdf-lib for output
         const newPdfDoc = await PDFLib.PDFDocument.create();
 
-        // Get compression level options
-        const level = levelSelect.value; // "low", "medium", "high"
-        let scale = 1.2;
-        let quality = 0.7;
+        const method = Array.from(compressMethodRadios).find(r => r.checked).value;
+        let scale = 1.0;
+        let quality = 0.6;
 
-        if (level === "low") {
-            scale = 1.5;
-            quality = 0.85;
-        } else if (level === "medium") {
-            scale = 1.0;
-            quality = 0.60;
-        } else if (level === "high") {
-            scale = 0.8;
-            quality = 0.35;
+        if (method === "level") {
+            const level = levelSelect.value; // "low", "medium", "high"
+            if (level === "low") {
+                scale = 1.5;
+                quality = 0.85;
+            } else if (level === "medium") {
+                scale = 1.0;
+                quality = 0.60;
+            } else if (level === "high") {
+                scale = 0.8;
+                quality = 0.35;
+            }
+        } else {
+            const targetSizeKB = Number(targetSizeInput.value) || 150;
+            const originalKB = selectedFile.size / 1024;
+            const ratio = targetSizeKB / originalKB;
+
+            if (ratio >= 0.8) {
+                scale = 1.3;
+                quality = 0.80;
+            } else if (ratio >= 0.5) {
+                scale = 1.0;
+                quality = 0.60;
+            } else if (ratio >= 0.3) {
+                scale = 0.8;
+                quality = 0.45;
+            } else {
+                scale = 0.6;
+                quality = 0.30;
+            }
         }
 
         for (let i = 1; i <= totalPages; i++) {

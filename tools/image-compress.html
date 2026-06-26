@@ -83,26 +83,33 @@
 
             </div>
 
-            <!-- Quality -->
+            <!-- Compression Mode Selection -->
             <div class="controls">
-
                 <div class="control-group">
-
-                    <label for="qualitySlider">
-
-                        Compression Quality
-
-                    </label>
-
-                    <input
-                        type="range"
-                        id="qualitySlider"
-                        min="0"
-                        max="100"
-                        value="80">
-
+                    <label>Compression Method</label>
+                    <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                            <input type="radio" name="compressMethod" value="quality" checked>
+                            By Quality
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                            <input type="radio" name="compressMethod" value="size">
+                            By Target Size (KB)
+                        </label>
+                    </div>
                 </div>
 
+                <!-- Quality Control -->
+                <div class="control-group" id="qualityControlGroup">
+                    <label for="qualitySlider">Compression Quality</label>
+                    <input type="range" id="qualitySlider" min="0" max="100" value="80">
+                </div>
+
+                <!-- Size Control -->
+                <div class="control-group" id="sizeControlGroup" style="display: none;">
+                    <label for="targetSizeInput">Target Size (KB)</label>
+                    <input type="number" id="targetSizeInput" min="1" placeholder="e.g. 200" value="200" style="padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; width: 100%;">
+                </div>
             </div>
 
             <!-- Preview -->

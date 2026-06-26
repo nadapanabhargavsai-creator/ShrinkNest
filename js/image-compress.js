@@ -24,8 +24,26 @@ const originalSize = document.getElementById("originalSize");
 const compressedSize = document.getElementById("compressedSize");
 const savedPercent = document.getElementById("savedPercent");
 
+const compressMethodRadios = document.getElementsByName("compressMethod");
+const qualityControlGroup = document.getElementById("qualityControlGroup");
+const sizeControlGroup = document.getElementById("sizeControlGroup");
+const targetSizeInput = document.getElementById("targetSizeInput");
+
 let selectedFile = null;
 let compressedFile = null;
+
+// Toggle options visibility
+compressMethodRadios.forEach(radio => {
+    radio.addEventListener("change", (e) => {
+        if (e.target.value === "quality") {
+            qualityControlGroup.style.display = "flex";
+            sizeControlGroup.style.display = "none";
+        } else {
+            qualityControlGroup.style.display = "none";
+            sizeControlGroup.style.display = "flex";
+        }
+    });
+});
 
 // ==========================================
 // IMAGE SELECT
@@ -60,23 +78,38 @@ compressBtn.addEventListener("click", async () => {
     compressBtn.disabled = true;
     compressBtn.textContent = "Compressing...";
 
-    try {
+        const method = Array.from(compressMethodRadios).find(r => r.checked).value;
+        let options = null;
 
-        const quality = Number(qualitySlider.value) / 100;
-
-        if (quality === 1.0) {
-            // 100% quality means keep original image
-            compressedFile = selectedFile;
+        if (method === "quality") {
+            const quality = Number(qualitySlider.value) / 100;
+            if (quality === 1.0) {
+                compressedFile = selectedFile;
+            } else {
+                const targetSizeMB = (selectedFile.size / (1024 * 1024)) * quality;
+                options = {
+                    maxSizeMB: Math.max(0.01, targetSizeMB),
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: false,
+                    initialQuality: quality,
+                    alwaysKeepResolution: false
+                };
+            }
         } else {
-            const targetSizeMB = (selectedFile.size / (1024 * 1024)) * quality;
-            const options = {
-                maxSizeMB: Math.max(0.01, targetSizeMB),
+            const targetSizeKB = Number(targetSizeInput.value) || 200;
+            options = {
+                maxSizeMB: Math.max(0.01, targetSizeKB / 1024),
                 maxWidthOrHeight: 1920,
-                useWebWorker: true,
-                initialQuality: quality,
-                alwaysKeepResolution: true
+                useWebWorker: false,
+                alwaysKeepResolution: false
             };
+        }
 
+        if (options) {
+            // Force format conversion to JPEG for PNGs so they can actually be compressed
+            if (selectedFile.type === "image/png" || selectedFile.name.toLowerCase().endsWith(".png")) {
+                options.fileType = "image/jpeg";
+            }
             compressedFile = await imageCompression(selectedFile, options);
 
             // Fallback to original if compressed version is somehow larger

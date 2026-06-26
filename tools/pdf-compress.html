@@ -76,27 +76,37 @@
 
             </div>
 
-            <!-- Compression Level -->
+            <!-- Compression Mode Selection -->
             <div class="controls">
-
                 <div class="control-group">
+                    <label>Compression Method</label>
+                    <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                            <input type="radio" name="compressMethod" value="level" checked>
+                            By Level
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                            <input type="radio" name="compressMethod" value="size">
+                            By Target Size (KB)
+                        </label>
+                    </div>
+                </div>
 
-                    <label for="compressionLevel">
-
-                        Compression Level
-
-                    </label>
-
+                <!-- Level Control -->
+                <div class="control-group" id="levelControlGroup">
+                    <label for="compressionLevel">Compression Level</label>
                     <select id="compressionLevel">
-
                         <option value="low">Low</option>
                         <option value="medium" selected>Medium</option>
                         <option value="high">High</option>
-
                     </select>
-
                 </div>
 
+                <!-- Size Control -->
+                <div class="control-group" id="sizeControlGroup" style="display: none;">
+                    <label for="targetSizeInput">Target Size (KB)</label>
+                    <input type="number" id="targetSizeInput" min="1" placeholder="e.g. 150" value="150" style="padding: 12px; border-radius: 10px; border: 1px solid #ddd; outline: none; width: 100%;">
+                </div>
             </div>
 
             <!-- Buttons -->

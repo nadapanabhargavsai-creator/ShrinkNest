@@ -25,23 +25,47 @@ const durationText = document.getElementById("duration");
 const compressedSize = document.getElementById("compressedSize");
 const savedPercent = document.getElementById("savedPercent");
 
+const compressMethodRadios = document.getElementsByName("compressMethod");
+const qualityControlGroup = document.getElementById("qualityControlGroup");
+const sizeControlGroup = document.getElementById("sizeControlGroup");
+const targetSizeInput = document.getElementById("targetSizeInput");
+
 let selectedFile = null;
 let compressedBlob = null;
 let ffmpeg = null;
 
+// Toggle options visibility
+compressMethodRadios.forEach(radio => {
+    radio.addEventListener("change", (e) => {
+        if (e.target.value === "quality") {
+            qualityControlGroup.style.display = "flex";
+            sizeControlGroup.style.display = "none";
+        } else {
+            qualityControlGroup.style.display = "none";
+            sizeControlGroup.style.display = "flex";
+        }
+    });
+});
+
 // ==========================================
-// LOAD FFMPEG
+// LOAD FFMPEG (0.12.x Single-Threaded)
 // ==========================================
 
 async function loadFFmpeg() {
 
     if (ffmpeg) return ffmpeg;
 
-    ffmpeg = FFmpeg.createFFmpeg({
-        log: true
+    const { FFmpeg } = FFmpegWASM;
+    ffmpeg = new FFmpeg();
+
+    ffmpeg.on("log", ({ message }) => {
+        console.log(message);
     });
 
-    await ffmpeg.load();
+    await ffmpeg.load({
+        coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+        wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm'
+    });
 
     return ffmpeg;
 
@@ -103,52 +127,53 @@ compressBtn.addEventListener("click", async () => {
 
         const ff = await loadFFmpeg();
 
-        ff.setProgress(({ ratio }) => {
-
-            progressBar.style.width =
-                `${Math.round(ratio * 100)}%`;
-
+        ff.on("progress", ({ progress }) => {
+            progressBar.style.width = `${Math.round(progress * 100)}%`;
         });
 
-        ff.FS(
-            "writeFile",
-            selectedFile.name,
-            await FFmpeg.fetchFile(selectedFile)
-        );
+        // Convert file to Uint8Array for writeFile in 0.12.x
+        const fileData = new Uint8Array(await selectedFile.arrayBuffer());
+        await ff.writeFile(selectedFile.name, fileData);
 
-        let crf = 28;
+        const method = Array.from(compressMethodRadios).find(r => r.checked).value;
+        const outputFile = "compressed.mp4";
+        let ffmpegArgs = ["-i", selectedFile.name, "-vcodec", "libx264"];
 
-        switch (qualitySelect.value) {
-
-            case "low":
-                crf = 34;
-                break;
-
-            case "medium":
-                crf = 28;
-                break;
-
-            case "high":
-                crf = 22;
-                break;
-
+        if (method === "quality") {
+            let crf = 28;
+            switch (qualitySelect.value) {
+                case "low":
+                    crf = 34;
+                    break;
+                case "medium":
+                    crf = 28;
+                    break;
+                case "high":
+                    crf = 22;
+                    break;
+            }
+            ffmpegArgs.push("-crf", String(crf), outputFile);
+        } else {
+            const targetSizeKB = Number(targetSizeInput.value) || 2000;
+            // Parse duration
+            const durationMatch = durationText.textContent.match(/([0-9.]+)/);
+            const duration = durationMatch ? parseFloat(durationMatch[1]) : 10;
+            
+            // Map target size to video bitrate (accounting for audio/container overhead)
+            const targetBitrateKbps = Math.max(100, Math.round((targetSizeKB * 8 * 0.85) / duration));
+            ffmpegArgs.push(
+                "-b:v", `${targetBitrateKbps}k`,
+                "-maxrate", `${targetBitrateKbps * 1.2}k`,
+                "-bufsize", `${targetBitrateKbps * 2}k`,
+                outputFile
+            );
         }
 
-        const outputFile = "compressed.mp4";
+        // Run compression command
+        await ff.exec(ffmpegArgs);
 
-        await ff.run(
-            "-i",
-            selectedFile.name,
-            "-vcodec",
-            "libx264",
-            "-crf",
-            String(crf),
-            outputFile
-        );
-
-        const data =
-            ff.FS("readFile", outputFile);
-
+        // Read result in 0.12.x
+        const data = await ff.readFile(outputFile);
         compressedBlob = new Blob(
             [data.buffer],
             {
@@ -198,14 +223,10 @@ compressBtn.addEventListener("click", async () => {
 
         // Clean FFmpeg virtual filesystem
         try {
-
-            ff.unlink(selectedFile.name);
-            ff.unlink(outputFile);
-
+            await ff.deleteFile(selectedFile.name);
+            await ff.deleteFile(outputFile);
         } catch (e) {
-
-            console.log("Cleanup skipped.");
-
+            console.log("Cleanup skipped:", e);
         }
 
     } catch (error) {
