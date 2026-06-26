@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create Account | ShrinkNest</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="container nav-container">
+
+        <a href="index.html" class="logo">
+
+            <span class="logo-icon">🪺</span>
+            <span>ShrinkNest</span>
+
+        </a>
+
+        <nav>
+
+            <ul class="nav-links">
+
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#tools">Tools</a></li>
+                <li><a href="login.html">Login</a></li>
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</header>
+
+<section class="auth-section">
+
+    <div class="auth-container glass">
+
+        <div class="auth-logo">
+
+            <span class="logo-icon">🪺</span>
+
+            <h2>ShrinkNest</h2>
+
+            <p>Compress Anything. Store Everything.</p>
+
+        </div>
+
+        <h1>Create Your ShrinkNest Account</h1>
+
+        <form id="signupForm">
+
+            <div class="input-group">
+
+                <label>Full Name</label>
+
+                <input
+                    type="text"
+                    id="name"
+                    placeholder="Enter your full name"
+                    required>
+
+                <small class="error" id="nameError"></small>
+
+            </div>
+
+            <div class="input-group">
+
+                <label>Email Address</label>
+
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter your email"
+                    required>
+
+                <small class="error" id="emailError"></small>
+
+            </div>
+
+            <div class="input-group">
+
+                <label>Password</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Create a password"
+                    required>
+
+                <div class="password-strength">
+
+                    <div id="strengthBar"></div>
+
+                </div>
+
+                <small id="strengthText"></small>
+
+                <small class="error" id="passwordError"></small>
+
+            </div>
+
+            <div class="input-group">
+
+                <label>Confirm Password</label>
+
+                <input
+                    type="password"
+                    id="confirmPassword"
+                    placeholder="Confirm password"
+                    required>
+
+                <small class="error" id="confirmPasswordError"></small>
+
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-primary auth-btn">
+
+                Create Account
+
+            </button>
+
+            <div class="divider">
+
+                <span>OR</span>
+
+            </div>
+
+            <button
+                type="button"
+                id="googleSignup"
+                class="google-btn">
+
+                <i class="fab fa-google"></i>
+
+                Sign Up with Google
+
+            </button>
+
+            <p class="auth-footer">
+
+                Already have an account?
+
+                <a href="login.html">
+
+                    Login
+
+                </a>
+
+            </p>
+
+        </form>
+
+    </div>
+
+</section>
+
+<script type="module">
+import {
+    signup,
+    googleLogin,
+    checkPasswordStrength,
+    validateSignupForm,
+    redirectIfLoggedIn
+} from "./js/auth.js";
+
+redirectIfLoggedIn();
+
+const form = document.getElementById("signupForm");
+const password = document.getElementById("password");
+const strengthBar = document.getElementById("strengthBar");
+const strengthText = document.getElementById("strengthText");
+
+// Password Strength Indicator
+password.addEventListener("input", () => {
+
+    const result = checkPasswordStrength(password.value);
+
+    strengthBar.style.width = `${result.score * 20}%`;
+    strengthBar.style.height = "6px";
+    strengthBar.style.borderRadius = "10px";
+    strengthBar.style.background = result.color;
+
+    strengthText.textContent = result.label;
+    strengthText.style.color = result.color;
+
+});
+
+// Signup Form
+form.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    document.querySelectorAll(".error").forEach(error => {
+        error.textContent = "";
+    });
+
+    const data = {
+
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        password: password.value,
+        confirmPassword: document.getElementById("confirmPassword").value
+
+    };
+
+    const validation = validateSignupForm(data);
+
+    if (!validation.valid) {
+
+        Object.keys(validation.errors).forEach(key => {
+
+            const element = document.getElementById(`${key}Error`);
+
+            if (element) {
+
+                element.textContent = validation.errors[key];
+
+            }
+
+        });
+
+        return;
+
+    }
+
+    const result = await signup(
+        data.name,
+        data.email,
+        data.password
+    );
+
+    if (result.success) {
+
+        window.location.href = "dashboard.html";
+
+    } else {
+
+        alert(result.message);
+
+    }
+
+});
+
+// Google Signup
+document
+.getElementById("googleSignup")
+.addEventListener("click", async () => {
+
+    const result = await googleLogin();
+
+    if (result.success) {
+
+        window.location.href = "dashboard.html";
+
+    } else {
+
+        alert(result.message);
+
+    }
+
+});
+</script>
+
+</body>
+</html>
