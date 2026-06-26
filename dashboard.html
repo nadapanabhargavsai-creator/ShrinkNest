@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | ShrinkNest</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="container nav-container">
+
+        <a href="index.html" class="logo">
+
+            <span class="logo-icon">🪺</span>
+            <span>ShrinkNest</span>
+
+        </a>
+
+        <button
+            id="logoutBtn"
+            class="btn btn-primary">
+
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+
+        </button>
+
+    </div>
+
+</header>
+
+<section class="dashboard">
+
+    <div class="container">
+
+        <div class="welcome-card glass">
+
+            <img
+                id="userPhoto"
+                src="assets/images/default-avatar.png"
+                alt="Profile">
+
+            <div>
+
+                <h2>
+
+                    Welcome back,
+                    <span id="userName">User</span>!
+
+                </h2>
+
+                <p>
+
+                    Compress Anything. Store Everything.
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="dashboard-tools">
+
+            <div class="tool-card glass">
+
+                <img
+                    src="assets/images/pdf-icon.svg"
+                    alt="PDF">
+
+                <h3>PDF Compressor</h3>
+
+                <p>Compress PDF documents instantly.</p>
+
+                <a
+                    href="tools/pdf-compress.html"
+                    class="card-btn">
+
+                    Open Tool
+
+                </a>
+
+            </div>
+
+            <div class="tool-card glass">
+
+                <img
+                    src="assets/images/image-icon.svg"
+                    alt="Image">
+
+                <h3>Image Compressor</h3>
+
+                <p>Compress JPG, PNG and WEBP images.</p>
+
+                <a
+                    href="tools/image-compress.html"
+                    class="card-btn">
+
+                    Open Tool
+
+                </a>
+
+            </div>
+
+            <div class="tool-card glass">
+
+                <img
+                    src="assets/images/video-icon.svg"
+                    alt="Video">
+
+                <h3>Video Compressor</h3>
+
+                <p>Compress MP4 and MOV videos.</p>
+
+                <a
+                    href="tools/video-compress.html"
+                    class="card-btn">
+
+                    Open Tool
+
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="history-section glass">
+
+            <div class="history-header">
+
+                <h2>Compression History</h2>
+
+            </div>
+
+            <table id="historyTable">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Filename</th>
+                        <th>Original Size</th>
+                        <th>Compressed Size</th>
+                        <th>Saved</th>
+                        <th>Date</th>
+                        <th>Type</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="historyBody">
+
+                    <!-- Filled by dashboard.js -->
+
+                </tbody>
+
+            </table>
+
+            <div
+                id="emptyState"
+                class="empty-state">
+
+                <img
+                    src="assets/images/empty-state.svg"
+                    alt="No History">
+
+                <h3>
+
+                    No compressions yet.
+
+                </h3>
+
+                <p>
+
+                    Start compressing your files to see history here.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<script type="module">
+    import {
+    protectPage,
+    logout,
+    displayUserInfo
+} from "./js/auth.js";
+
+import {
+    loadDashboard
+} from "./js/dashboard.js";
+
+// Protect this page
+protectPage();
+
+// Display logged-in user's info
+displayUserInfo();
+
+// Load compression history
+loadDashboard();
+
+// Logout Button
+document
+    .getElementById("logoutBtn")
+    .addEventListener("click", async () => {
+
+        await logout();
+
+    });
+
+</script>
+
+</body>
+
+</html>
