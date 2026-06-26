@@ -1,0 +1,399 @@
+/* ==========================================
+   SHRINKNEST DASHBOARD STYLES
+   File: css/dashboard.css
+========================================== */
+
+.dashboard{
+
+    padding:60px 0;
+    min-height:calc(100vh - 80px);
+    background:#f8f9ff;
+
+}
+
+/* ==========================================
+   WELCOME CARD
+========================================== */
+
+.welcome-card{
+
+    display:flex;
+    align-items:center;
+    gap:25px;
+    padding:30px;
+    border-radius:25px;
+    margin-bottom:40px;
+
+}
+
+.welcome-card img{
+
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    object-fit:cover;
+    border:4px solid var(--primary);
+
+}
+
+.welcome-card h2{
+
+    font-size:30px;
+    margin-bottom:8px;
+
+}
+
+.welcome-card p{
+
+    color:#666;
+
+}
+
+/* ==========================================
+   TOOL CARDS
+========================================== */
+
+.dashboard-tools{
+
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:30px;
+    margin-bottom:45px;
+
+}
+
+.dashboard-tools .tool-card{
+
+    text-align:center;
+    padding:30px;
+    border-radius:20px;
+    transition:.3s;
+
+}
+
+.dashboard-tools .tool-card:hover{
+
+    transform:translateY(-8px);
+
+}
+
+.dashboard-tools .tool-card img{
+
+    width:80px;
+    margin:0 auto 20px;
+
+}
+
+.dashboard-tools .tool-card h3{
+
+    margin-bottom:12px;
+
+}
+
+.dashboard-tools .tool-card p{
+
+    color:#666;
+    margin-bottom:20px;
+
+}
+
+/* ==========================================
+   HISTORY SECTION
+========================================== */
+
+.history-section{
+
+    border-radius:25px;
+    padding:30px;
+    overflow-x:auto;
+
+}
+
+.history-header{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+
+}
+
+.history-header h2{
+
+    font-size:28px;
+
+}
+
+#historyTable{
+
+    width:100%;
+    border-collapse:collapse;
+    min-width:700px;
+
+}
+
+#historyTable thead{
+
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        var(--secondary)
+    );
+
+    color:#fff;
+
+}
+
+#historyTable th,
+#historyTable td{
+
+    padding:16px;
+    text-align:left;
+    border-bottom:1px solid #eee;
+
+}
+
+#historyTable tbody tr{
+
+    transition:.3s;
+
+}
+
+#historyTable tbody tr:hover{
+
+    background:#f2f5ff;
+
+}
+
+/* ==========================================
+   EMPTY STATE
+========================================== */
+
+.empty-state{
+
+    text-align:center;
+    padding:50px 20px;
+    display:none;
+
+}
+
+.empty-state img{
+
+    width:220px;
+    margin:0 auto 25px;
+
+}
+
+.empty-state h3{
+
+    margin-bottom:10px;
+    color:var(--primary);
+
+}
+
+.empty-state p{
+
+    color:#777;
+
+}
+/* ==========================================
+   STATUS BADGES
+========================================== */
+
+.badge{
+
+    display:inline-block;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+    color:#fff;
+
+}
+
+.badge-pdf{
+
+    background:#ff4d4f;
+
+}
+
+.badge-image{
+
+    background:#52c41a;
+
+}
+
+.badge-video{
+
+    background:#1890ff;
+
+}
+
+/* ==========================================
+   ACTION BUTTONS
+========================================== */
+
+.history-action{
+
+    padding:8px 14px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        var(--secondary)
+    );
+    color:#fff;
+    cursor:pointer;
+    transition:.3s;
+
+}
+
+.history-action:hover{
+
+    transform:translateY(-2px);
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width:992px){
+
+    .welcome-card{
+
+        flex-direction:column;
+        text-align:center;
+
+    }
+
+    .welcome-card img{
+
+        width:80px;
+        height:80px;
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .dashboard{
+
+        padding:40px 0;
+
+    }
+
+    .history-section{
+
+        padding:20px;
+
+    }
+
+    .history-header{
+
+        flex-direction:column;
+        align-items:flex-start;
+        gap:15px;
+
+    }
+
+    .history-header h2{
+
+        font-size:24px;
+
+    }
+
+}
+
+@media (max-width:576px){
+
+    .dashboard-tools{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .welcome-card{
+
+        padding:20px;
+
+    }
+
+    .welcome-card h2{
+
+        font-size:24px;
+
+    }
+
+    .welcome-card p{
+
+        font-size:14px;
+
+    }
+
+    #historyTable{
+
+        min-width:650px;
+
+    }
+
+}
+
+/* ==========================================
+   ANIMATIONS
+========================================== */
+
+.welcome-card,
+.dashboard-tools .tool-card,
+.history-section{
+
+    animation:dashboardFade .5s ease;
+
+}
+
+@keyframes dashboardFade{
+
+    from{
+
+        opacity:0;
+        transform:translateY(25px);
+
+    }
+
+    to{
+
+        opacity:1;
+        transform:translateY(0);
+
+    }
+
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+.history-section::-webkit-scrollbar{
+
+    height:8px;
+
+}
+
+.history-section::-webkit-scrollbar-thumb{
+
+    background:var(--primary);
+    border-radius:20px;
+
+}
+
+.history-section::-webkit-scrollbar-track{
+
+    background:#eee;
+
+}
+
+/* ==========================================
+   END OF DASHBOARD.CSS
+========================================== */
