@@ -53,47 +53,30 @@ compressMethodRadios.forEach(radio => {
     });
 });
 
-// Helper to load external scripts/wasm as local Blob URLs to bypass CORS on file:// protocol
-async function toBlobURL(url, mimeType) {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return URL.createObjectURL(new Blob([blob], { type: mimeType }));
-}
+// Use FFmpeg v0.11.6 API
+const { createFFmpeg, fetchFile } = window.FFmpeg;
 
 // ==========================================
-// LOAD FFMPEG (0.12.x Single-Threaded)
+// LOAD FFMPEG (0.11.x Single-Threaded)
 // ==========================================
 
 async function loadFFmpeg() {
-    if (ffmpeg && ffmpeg.loaded) return ffmpeg;
+    if (ffmpeg && ffmpeg.isLoaded()) return ffmpeg;
 
-    const { FFmpeg } = window.FFmpegWASM || window.FFmpeg || {};
-    if (!FFmpeg) {
-        throw new Error("FFmpeg library was not loaded correctly from CDN.");
-    }
-    
-    ffmpeg = new FFmpeg();
-
-    ffmpeg.on("log", ({ message }) => {
-        console.log(message);
+    ffmpeg = createFFmpeg({
+        log: true,
+        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
     });
 
-    ffmpeg.on("progress", ({ progress }) => {
-        const percent = Math.round(progress * 100);
-        progressBar.style.width = `${percent}%`;
-        progressPercent.textContent = `${percent}%`;
+    ffmpeg.setProgress(({ ratio }) => {
+        const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+        if (progressBar && progressPercent) {
+            progressBar.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+        }
     });
 
-    const coreURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js', 'text/javascript');
-    const wasmURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm', 'application/wasm');
-    const classWorkerURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js', 'text/javascript');
-
-    await ffmpeg.load({
-        coreURL,
-        wasmURL,
-        classWorkerURL
-    });
-
+    await ffmpeg.load();
     return ffmpeg;
 }
 
@@ -173,15 +156,11 @@ compressBtn.addEventListener("click", async () => {
 
         statusMessage.textContent = "Uploading...";
         
-        // Convert file to Uint8Array for writeFile in 0.12.x
-        const fileData = new Uint8Array(await selectedFile.arrayBuffer());
-        
-        // Use safe internal filenames to avoid issues with spaces and special characters
         const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.'));
         const inputName = "input_video" + ext;
         const outputName = "output_video.mp4";
         
-        await ff.writeFile(inputName, fileData);
+        ff.FS('writeFile', inputName, await fetchFile(selectedFile));
 
         statusMessage.textContent = "Compressing...";
 
@@ -237,17 +216,14 @@ compressBtn.addEventListener("click", async () => {
         }
 
         // Run compression command
-        const ret = await ff.exec(ffmpegArgs);
-        if (ret !== 0) {
-            throw new Error(`FFmpeg exited with code ${ret}`);
-        }
+        await ff.run(...ffmpegArgs);
 
         statusMessage.textContent = "Finalizing...";
         progressBar.style.width = "95%";
         progressPercent.textContent = "95%";
 
-        // Read result in 0.12.x
-        const data = await ff.readFile(outputName);
+        // Read result in 0.11.x
+        const data = ff.FS('readFile', outputName);
         compressedBlob = new Blob([data.buffer], { type: "video/mp4" });
 
         let finalSize = compressedBlob.size;
@@ -298,8 +274,8 @@ compressBtn.addEventListener("click", async () => {
 
         // Clean FFmpeg virtual filesystem
         try {
-            await ff.deleteFile(inputName);
-            await ff.deleteFile(outputName);
+            ff.FS('unlink', inputName);
+            ff.FS('unlink', outputName);
         } catch (e) {
             console.log("Cleanup skipped:", e);
         }
