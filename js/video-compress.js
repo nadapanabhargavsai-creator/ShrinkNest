@@ -4,7 +4,7 @@
 // ==========================================
 
 import { auth, db } from "./firebase-config.js";
-import { calculateSavedPercentage } from "./utils.js";
+import { calculateSavedPercentage, formatFileSize } from "./utils.js";
 
 import {
     collection,
@@ -29,6 +29,12 @@ const compressMethodRadios = document.getElementsByName("compressMethod");
 const qualityControlGroup = document.getElementById("qualityControlGroup");
 const sizeControlGroup = document.getElementById("sizeControlGroup");
 const targetSizeInput = document.getElementById("targetSizeInput");
+
+const beforePreview = document.getElementById("beforePreview");
+const afterPreview = document.getElementById("afterPreview");
+const previewGrid = document.getElementById("previewGrid");
+const statusMessage = document.getElementById("statusMessage");
+const progressPercent = document.getElementById("progressPercent");
 
 let selectedFile = null;
 let compressedBlob = null;
@@ -59,18 +65,27 @@ async function toBlobURL(url, mimeType) {
 // ==========================================
 
 async function loadFFmpeg() {
-
     if (ffmpeg) return ffmpeg;
 
-    const { FFmpeg } = FFmpegWASM;
+    const { FFmpeg } = window.FFmpegWASM || window.FFmpeg || {};
+    if (!FFmpeg) {
+        throw new Error("FFmpeg library was not loaded correctly from CDN.");
+    }
+    
     ffmpeg = new FFmpeg();
 
     ffmpeg.on("log", ({ message }) => {
         console.log(message);
     });
 
-    const coreURL = await toBlobURL('https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js', 'text/javascript');
-    const wasmURL = await toBlobURL('https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm', 'application/wasm');
+    ffmpeg.on("progress", ({ progress }) => {
+        const percent = Math.round(progress * 100);
+        progressBar.style.width = `${percent}%`;
+        progressPercent.textContent = `${percent}%`;
+    });
+
+    const coreURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js', 'text/javascript');
+    const wasmURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm', 'application/wasm');
 
     await ffmpeg.load({
         coreURL,
@@ -78,7 +93,6 @@ async function loadFFmpeg() {
     });
 
     return ffmpeg;
-
 }
 
 // ==========================================
@@ -86,31 +100,48 @@ async function loadFFmpeg() {
 // ==========================================
 
 uploadInput.addEventListener("change", (e) => {
-
     selectedFile = e.target.files[0];
 
     if (!selectedFile) return;
 
+    // Validate file type
+    const allowedExtensions = ["mp4", "mov", "avi", "mkv", "webm", "mpeg"];
+    const ext = selectedFile.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+        alert("Unsupported video format. Please upload MP4, MOV, AVI, MKV, WEBM, or MPEG.");
+        uploadInput.value = "";
+        selectedFile = null;
+        return;
+    }
+
+    // Reset UI State for a new session
+    compressedBlob = null;
+    downloadBtn.style.display = "none";
+    resultCard.style.display = "none";
+    progressContainer.style.display = "none";
+    progressPercent.style.display = "none";
+    statusMessage.style.display = "none";
+    afterPreview.src = "";
+
+    const fileInfo = document.getElementById("fileInfo");
+    if (fileInfo) fileInfo.style.display = "block";
+
     fileName.textContent = selectedFile.name;
+    originalSize.textContent = formatFileSize(selectedFile.size);
 
-    originalSize.textContent =
-        (selectedFile.size / (1024 * 1024)).toFixed(2) + " MB";
+    const objectURL = URL.createObjectURL(selectedFile);
+    beforePreview.src = objectURL;
 
+    if (previewGrid) previewGrid.style.display = "grid";
+
+    // Read metadata duration
     const video = document.createElement("video");
-
     video.preload = "metadata";
-
     video.onloadedmetadata = () => {
-
-        durationText.textContent =
-            video.duration.toFixed(2) + " sec";
-
+        durationText.textContent = video.duration.toFixed(2) + " sec";
         URL.revokeObjectURL(video.src);
-
     };
-
-    video.src = URL.createObjectURL(selectedFile);
-
+    video.src = objectURL;
 });
 
 // ==========================================
@@ -118,51 +149,63 @@ uploadInput.addEventListener("change", (e) => {
 // ==========================================
 
 compressBtn.addEventListener("click", async () => {
-
     if (!selectedFile) {
-
-        alert("Please select a video.");
-
+        alert("Please select a video first.");
         return;
-
     }
 
     compressBtn.disabled = true;
-    compressBtn.textContent = "Compressing...";
+    compressBtn.textContent = "Processing...";
 
     progressContainer.style.display = "block";
     progressBar.style.width = "0%";
+    progressPercent.style.display = "block";
+    progressPercent.textContent = "0%";
+
+    statusMessage.style.display = "block";
+    statusMessage.style.color = "var(--primary)";
+    statusMessage.textContent = "Loading FFmpeg...";
 
     try {
-
         const ff = await loadFFmpeg();
 
-        ff.on("progress", ({ progress }) => {
-            progressBar.style.width = `${Math.round(progress * 100)}%`;
-        });
-
+        statusMessage.textContent = "Uploading...";
+        
         // Convert file to Uint8Array for writeFile in 0.12.x
         const fileData = new Uint8Array(await selectedFile.arrayBuffer());
         await ff.writeFile(selectedFile.name, fileData);
 
+        statusMessage.textContent = "Compressing...";
+
         const method = Array.from(compressMethodRadios).find(r => r.checked).value;
-        const outputFile = "compressed.mp4";
-        let ffmpegArgs = ["-i", selectedFile.name, "-vcodec", "libx264"];
+        const outputFile = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) + "_compressed.mp4";
+        
+        // Setup base options (use libx264, preset superfast, aac audio)
+        let ffmpegArgs = ["-i", selectedFile.name, "-c:v", "libx264"];
 
         if (method === "quality") {
             let crf = 28;
             switch (qualitySelect.value) {
                 case "low":
-                    crf = 34;
+                    crf = 32;
                     break;
                 case "medium":
                     crf = 28;
                     break;
                 case "high":
-                    crf = 22;
+                    crf = 24;
                     break;
             }
-            ffmpegArgs.push("-crf", String(crf), outputFile);
+            ffmpegArgs.push(
+                "-crf", String(crf),
+                "-preset", "superfast",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-pix_fmt", "yuv420p",
+                "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", // Fix odd dimensions error
+                "-movflags", "faststart",
+                outputFile
+            );
         } else {
             const targetSizeKB = Number(targetSizeInput.value) || 2000;
             // Parse duration
@@ -175,6 +218,12 @@ compressBtn.addEventListener("click", async () => {
                 "-b:v", `${targetBitrateKbps}k`,
                 "-maxrate", `${targetBitrateKbps * 1.2}k`,
                 "-bufsize", `${targetBitrateKbps * 2}k`,
+                "-preset", "superfast",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-pix_fmt", "yuv420p",
+                "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", // Fix odd dimensions error
+                "-movflags", "faststart",
                 outputFile
             );
         }
@@ -182,53 +231,58 @@ compressBtn.addEventListener("click", async () => {
         // Run compression command
         await ff.exec(ffmpegArgs);
 
+        statusMessage.textContent = "Finalizing...";
+        progressBar.style.width = "95%";
+        progressPercent.textContent = "95%";
+
         // Read result in 0.12.x
         const data = await ff.readFile(outputFile);
-        compressedBlob = new Blob(
-            [data.buffer],
-            {
-                type: "video/mp4"
-            }
-        );
+        compressedBlob = new Blob([data.buffer], { type: "video/mp4" });
 
+        let finalSize = compressedBlob.size;
+        let isOriginalUsed = false;
+
+        // Fallback to original if output is somehow larger
         if (compressedBlob.size >= selectedFile.size) {
             compressedBlob = selectedFile;
+            finalSize = selectedFile.size;
+            isOriginalUsed = true;
         }
 
-        const finalSize = compressedBlob.size;
-
-        compressedSize.textContent =
-            (finalSize / (1024 * 1024)).toFixed(2) + " MB";
+        // Display results
+        document.getElementById("resultOriginalSize").textContent = formatFileSize(selectedFile.size);
+        compressedSize.textContent = formatFileSize(finalSize);
 
         const saved = calculateSavedPercentage(selectedFile.size, finalSize);
-
         savedPercent.textContent = saved + "%";
 
-        // Enable download
+        const compressedObjectURL = URL.createObjectURL(compressedBlob);
+        afterPreview.src = compressedObjectURL;
+
+        // Enable download button and results card
         downloadBtn.style.display = "inline-block";
+        resultCard.style.display = "block";
 
-        // Show result card
-        const resultCard = document.getElementById("resultCard");
-        if (resultCard) {
-            resultCard.style.display = "block";
-        }
+        statusMessage.textContent = isOriginalUsed ? "Compression Complete (Original Kept)" : "Compression Complete!";
+        progressBar.style.width = "100%";
+        progressPercent.textContent = "100%";
 
-        // Save history to Firestore
+        // Save history to Firestore if logged in
         if (auth.currentUser) {
-
-            await addDoc(collection(db, "history"), {
-
-                uid: auth.currentUser.uid,
-                filename: selectedFile.name,
-                originalSize: (selectedFile.size / (1024 * 1024)).toFixed(2) + " MB",
-                compressedSize: (finalSize / (1024 * 1024)).toFixed(2) + " MB",
-                saved: saved,
-                type: "video",
-                date: new Date().toLocaleDateString(),
-                timestamp: serverTimestamp()
-
-            });
-
+            try {
+                await addDoc(collection(db, "history"), {
+                    uid: auth.currentUser.uid,
+                    filename: selectedFile.name,
+                    originalSize: formatFileSize(selectedFile.size),
+                    compressedSize: formatFileSize(finalSize),
+                    saved: saved,
+                    type: "video",
+                    date: new Date().toLocaleDateString(),
+                    timestamp: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Firestore history save failed:", err);
+            }
         }
 
         // Clean FFmpeg virtual filesystem
@@ -240,18 +294,14 @@ compressBtn.addEventListener("click", async () => {
         }
 
     } catch (error) {
-
         console.error(error);
-        alert("Video compression failed.");
-
+        statusMessage.textContent = "Failed to compress video.";
+        statusMessage.style.color = "#ef4444";
+        alert("Video compression failed. Make sure it is a valid video format.");
     } finally {
-
         compressBtn.disabled = false;
         compressBtn.textContent = "Compress Video";
-        progressBar.style.width = "100%";
-
     }
-
 });
 
 // ==========================================
@@ -259,29 +309,22 @@ compressBtn.addEventListener("click", async () => {
 // ==========================================
 
 downloadBtn.addEventListener("click", () => {
-
     if (!compressedBlob) {
-
         alert("Please compress a video first.");
         return;
-
     }
 
+    const outputFileName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) + "_compressed.mp4";
     const url = URL.createObjectURL(compressedBlob);
-
     const a = document.createElement("a");
 
     a.href = url;
-    a.download = "compressed-" + selectedFile.name;
+    a.download = outputFileName;
 
     document.body.appendChild(a);
-
     a.click();
-
     document.body.removeChild(a);
-
     URL.revokeObjectURL(url);
-
 });
 
 // ==========================================
@@ -291,35 +334,24 @@ downloadBtn.addEventListener("click", () => {
 const uploadBox = document.querySelector(".upload-box");
 
 if (uploadBox) {
-
     uploadBox.addEventListener("dragover", (e) => {
-
         e.preventDefault();
         uploadBox.classList.add("dragover");
-
     });
 
     uploadBox.addEventListener("dragleave", () => {
-
         uploadBox.classList.remove("dragover");
-
     });
 
     uploadBox.addEventListener("drop", (e) => {
-
         e.preventDefault();
-
         uploadBox.classList.remove("dragover");
 
         if (e.dataTransfer.files.length) {
-
             uploadInput.files = e.dataTransfer.files;
             uploadInput.dispatchEvent(new Event("change"));
-
         }
-
     });
-
 }
 
 // ==========================================
