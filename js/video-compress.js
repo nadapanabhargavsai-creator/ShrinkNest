@@ -65,7 +65,7 @@ async function toBlobURL(url, mimeType) {
 // ==========================================
 
 async function loadFFmpeg() {
-    if (ffmpeg) return ffmpeg;
+    if (ffmpeg && ffmpeg.loaded) return ffmpeg;
 
     const { FFmpeg } = window.FFmpegWASM || window.FFmpeg || {};
     if (!FFmpeg) {
@@ -86,10 +86,12 @@ async function loadFFmpeg() {
 
     const coreURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js', 'text/javascript');
     const wasmURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm', 'application/wasm');
+    const classWorkerURL = await toBlobURL('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js', 'text/javascript');
 
     await ffmpeg.load({
         coreURL,
-        wasmURL
+        wasmURL,
+        classWorkerURL
     });
 
     return ffmpeg;
@@ -173,15 +175,20 @@ compressBtn.addEventListener("click", async () => {
         
         // Convert file to Uint8Array for writeFile in 0.12.x
         const fileData = new Uint8Array(await selectedFile.arrayBuffer());
-        await ff.writeFile(selectedFile.name, fileData);
+        
+        // Use safe internal filenames to avoid issues with spaces and special characters
+        const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf('.'));
+        const inputName = "input_video" + ext;
+        const outputName = "output_video.mp4";
+        
+        await ff.writeFile(inputName, fileData);
 
         statusMessage.textContent = "Compressing...";
 
         const method = Array.from(compressMethodRadios).find(r => r.checked).value;
-        const outputFile = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) + "_compressed.mp4";
         
         // Setup base options (use libx264, preset superfast, aac audio)
-        let ffmpegArgs = ["-i", selectedFile.name, "-c:v", "libx264"];
+        let ffmpegArgs = ["-i", inputName, "-c:v", "libx264"];
 
         if (method === "quality") {
             let crf = 28;
@@ -203,14 +210,15 @@ compressBtn.addEventListener("click", async () => {
                 "-b:a", "128k",
                 "-pix_fmt", "yuv420p",
                 "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", // Fix odd dimensions error
-                "-movflags", "faststart",
-                outputFile
+                "-movflags", "+faststart",
+                outputName
             );
         } else {
             const targetSizeKB = Number(targetSizeInput.value) || 2000;
-            // Parse duration
+            // Parse duration safely
             const durationMatch = durationText.textContent.match(/([0-9.]+)/);
-            const duration = durationMatch ? parseFloat(durationMatch[1]) : 10;
+            let duration = durationMatch ? parseFloat(durationMatch[1]) : 10;
+            if (isNaN(duration) || duration <= 0) duration = 10;
             
             // Map target size to video bitrate (accounting for audio/container overhead)
             const targetBitrateKbps = Math.max(100, Math.round((targetSizeKB * 8 * 0.85) / duration));
@@ -223,20 +231,23 @@ compressBtn.addEventListener("click", async () => {
                 "-b:a", "128k",
                 "-pix_fmt", "yuv420p",
                 "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", // Fix odd dimensions error
-                "-movflags", "faststart",
-                outputFile
+                "-movflags", "+faststart",
+                outputName
             );
         }
 
         // Run compression command
-        await ff.exec(ffmpegArgs);
+        const ret = await ff.exec(ffmpegArgs);
+        if (ret !== 0) {
+            throw new Error(`FFmpeg exited with code ${ret}`);
+        }
 
         statusMessage.textContent = "Finalizing...";
         progressBar.style.width = "95%";
         progressPercent.textContent = "95%";
 
         // Read result in 0.12.x
-        const data = await ff.readFile(outputFile);
+        const data = await ff.readFile(outputName);
         compressedBlob = new Blob([data.buffer], { type: "video/mp4" });
 
         let finalSize = compressedBlob.size;
@@ -287,8 +298,8 @@ compressBtn.addEventListener("click", async () => {
 
         // Clean FFmpeg virtual filesystem
         try {
-            await ff.deleteFile(selectedFile.name);
-            await ff.deleteFile(outputFile);
+            await ff.deleteFile(inputName);
+            await ff.deleteFile(outputName);
         } catch (e) {
             console.log("Cleanup skipped:", e);
         }
@@ -297,7 +308,7 @@ compressBtn.addEventListener("click", async () => {
         console.error(error);
         statusMessage.textContent = "Failed to compress video.";
         statusMessage.style.color = "#ef4444";
-        alert("Video compression failed. Make sure it is a valid video format.");
+        alert("Video compression failed. Error: " + (error.message || error.toString()));
     } finally {
         compressBtn.disabled = false;
         compressBtn.textContent = "Compress Video";
