@@ -12,11 +12,6 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-
-// Use local FFmpeg v0.12.6 API to bypass cross-origin Web Worker issues
-const { FFmpeg } = window.FFmpegWASM;
-const { fetchFile } = window.FFmpegUtil;
-
 const uploadInput = document.getElementById("videoFile");
 const compressBtn = document.getElementById("compressBtn");
 const qualitySelect = document.getElementById("qualitySelect");
@@ -58,29 +53,30 @@ compressMethodRadios.forEach(radio => {
     });
 });
 
+// Use FFmpeg v0.11.6 API
+const { createFFmpeg, fetchFile } = window.FFmpeg;
+
 // ==========================================
-// LOAD FFMPEG (0.12.6 Single-Threaded)
+// LOAD FFMPEG (0.11.x Single-Threaded)
 // ==========================================
 
 async function loadFFmpeg() {
-    if (ffmpeg && ffmpeg.loaded) return ffmpeg;
+    if (ffmpeg && ffmpeg.isLoaded()) return ffmpeg;
 
-    ffmpeg = new FFmpeg();
+    ffmpeg = createFFmpeg({
+        log: true,
+        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+    });
 
-    ffmpeg.on('progress', ({ progress }) => {
-        const percent = Math.max(0, Math.min(100, Math.round(progress * 100)));
+    ffmpeg.setProgress(({ ratio }) => {
+        const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
         if (progressBar && progressPercent) {
             progressBar.style.width = `${percent}%`;
             progressPercent.textContent = `${percent}%`;
         }
     });
 
-    // Use local single-threaded core
-    await ffmpeg.load({
-        coreURL: '../js/ffmpeg/ffmpeg-core.js',
-        wasmURL: '../js/ffmpeg/ffmpeg-core.wasm'
-    });
-    
+    await ffmpeg.load();
     return ffmpeg;
 }
 
@@ -164,7 +160,7 @@ compressBtn.addEventListener("click", async () => {
         const inputName = "input_video" + ext;
         const outputName = "output_video.mp4";
         
-        await ff.writeFile(inputName, await fetchFile(selectedFile));
+        ff.FS('writeFile', inputName, await fetchFile(selectedFile));
 
         statusMessage.textContent = "Compressing...";
 
@@ -220,14 +216,14 @@ compressBtn.addEventListener("click", async () => {
         }
 
         // Run compression command
-        await ff.exec(ffmpegArgs);
+        await ff.run(...ffmpegArgs);
 
         statusMessage.textContent = "Finalizing...";
         progressBar.style.width = "95%";
         progressPercent.textContent = "95%";
 
-        // Read result in 0.12.x
-        const data = await ff.readFile(outputName);
+        // Read result in 0.11.x
+        const data = ff.FS('readFile', outputName);
         compressedBlob = new Blob([data.buffer], { type: "video/mp4" });
 
         let finalSize = compressedBlob.size;
@@ -278,8 +274,8 @@ compressBtn.addEventListener("click", async () => {
 
         // Clean FFmpeg virtual filesystem
         try {
-            await ff.deleteFile(inputName);
-            await ff.deleteFile(outputName);
+            ff.FS('unlink', inputName);
+            ff.FS('unlink', outputName);
         } catch (e) {
             console.log("Cleanup skipped:", e);
         }
