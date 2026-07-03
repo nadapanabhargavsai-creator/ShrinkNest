@@ -53,30 +53,33 @@ compressMethodRadios.forEach(radio => {
     });
 });
 
-// Use FFmpeg v0.11.6 API
-const { createFFmpeg, fetchFile } = window.FFmpeg;
+// Use FFmpeg v0.12.6 API
+const { FFmpeg } = window.FFmpeg;
+const { fetchFile } = window.FFmpegUtil;
 
 // ==========================================
-// LOAD FFMPEG (0.11.x Single-Threaded)
+// LOAD FFMPEG (0.12.6 Single-Threaded)
 // ==========================================
 
 async function loadFFmpeg() {
-    if (ffmpeg && ffmpeg.isLoaded()) return ffmpeg;
+    if (ffmpeg && ffmpeg.loaded) return ffmpeg;
 
-    ffmpeg = createFFmpeg({
-        log: true,
-        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
-    });
+    ffmpeg = new FFmpeg();
 
-    ffmpeg.setProgress(({ ratio }) => {
-        const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+    ffmpeg.on('progress', ({ progress }) => {
+        const percent = Math.max(0, Math.min(100, Math.round(progress * 100)));
         if (progressBar && progressPercent) {
             progressBar.style.width = `${percent}%`;
             progressPercent.textContent = `${percent}%`;
         }
     });
 
-    await ffmpeg.load();
+    // Use single-threaded core
+    await ffmpeg.load({
+        coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+        wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+    });
+    
     return ffmpeg;
 }
 
@@ -160,7 +163,7 @@ compressBtn.addEventListener("click", async () => {
         const inputName = "input_video" + ext;
         const outputName = "output_video.mp4";
         
-        ff.FS('writeFile', inputName, await fetchFile(selectedFile));
+        await ff.writeFile(inputName, await fetchFile(selectedFile));
 
         statusMessage.textContent = "Compressing...";
 
@@ -216,14 +219,14 @@ compressBtn.addEventListener("click", async () => {
         }
 
         // Run compression command
-        await ff.run(...ffmpegArgs);
+        await ff.exec(ffmpegArgs);
 
         statusMessage.textContent = "Finalizing...";
         progressBar.style.width = "95%";
         progressPercent.textContent = "95%";
 
-        // Read result in 0.11.x
-        const data = ff.FS('readFile', outputName);
+        // Read result in 0.12.x
+        const data = await ff.readFile(outputName);
         compressedBlob = new Blob([data.buffer], { type: "video/mp4" });
 
         let finalSize = compressedBlob.size;
@@ -274,8 +277,8 @@ compressBtn.addEventListener("click", async () => {
 
         // Clean FFmpeg virtual filesystem
         try {
-            ff.FS('unlink', inputName);
-            ff.FS('unlink', outputName);
+            await ff.deleteFile(inputName);
+            await ff.deleteFile(outputName);
         } catch (e) {
             console.log("Cleanup skipped:", e);
         }

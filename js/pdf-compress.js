@@ -189,20 +189,20 @@ compressBtn.addEventListener("click", async () => {
 
         // Save History (if logged in)
         if (auth.currentUser) {
-
-            await addDoc(collection(db, "history"), {
-
-                uid: auth.currentUser.uid,
-                filename: selectedFile.name,
-                originalSize: formatFileSize(selectedFile.size),
-                compressedSize: formatFileSize(newSize),
-                saved: saved,
-                type: "pdf",
-                date: new Date().toLocaleDateString(),
-                timestamp: serverTimestamp()
-
-            });
-
+            try {
+                await addDoc(collection(db, "history"), {
+                    uid: auth.currentUser.uid,
+                    filename: selectedFile.name,
+                    originalSize: formatFileSize(selectedFile.size),
+                    compressedSize: formatFileSize(newSize),
+                    saved: saved,
+                    type: "pdf",
+                    date: new Date().toLocaleDateString(),
+                    timestamp: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("Firestore history save failed:", err);
+            }
         }
 
     } catch (error) {
