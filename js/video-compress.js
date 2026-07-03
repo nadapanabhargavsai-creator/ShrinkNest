@@ -12,6 +12,11 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
+
+// Use local FFmpeg v0.12.6 API to bypass cross-origin Web Worker issues
+const { FFmpeg } = window.FFmpegWASM;
+const { fetchFile } = window.FFmpegUtil;
+
 const uploadInput = document.getElementById("videoFile");
 const compressBtn = document.getElementById("compressBtn");
 const qualitySelect = document.getElementById("qualitySelect");
@@ -53,10 +58,6 @@ compressMethodRadios.forEach(radio => {
     });
 });
 
-// Use FFmpeg v0.12.6 API
-const { FFmpeg } = window.FFmpeg;
-const { fetchFile } = window.FFmpegUtil;
-
 // ==========================================
 // LOAD FFMPEG (0.12.6 Single-Threaded)
 // ==========================================
@@ -74,10 +75,10 @@ async function loadFFmpeg() {
         }
     });
 
-    // Use single-threaded core
+    // Use local single-threaded core
     await ffmpeg.load({
-        coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-        wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+        coreURL: '../js/ffmpeg/ffmpeg-core.js',
+        wasmURL: '../js/ffmpeg/ffmpeg-core.wasm'
     });
     
     return ffmpeg;
