@@ -38,14 +38,41 @@
 
         </a>
 
-        <button
-            id="logoutBtn"
-            class="btn btn-primary">
+        <div class="nav-right-group">
 
-            <i class="fas fa-sign-out-alt"></i>
-            Logout
+            <!-- Settings Gear -->
+            <div class="settings-wrapper">
 
-        </button>
+                <button id="settingsBtn" class="settings-btn" title="Settings" aria-label="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+
+                <div id="settingsDropdown" class="settings-dropdown glass" aria-hidden="true">
+
+                    <p class="settings-label">Theme</p>
+
+                    <div class="theme-toggle-row">
+                        <i class="fas fa-sun"></i>
+                        <label class="theme-switch" for="themeToggle">
+                            <input type="checkbox" id="themeToggle">
+                            <span class="theme-slider"></span>
+                        </label>
+                        <i class="fas fa-moon"></i>
+                    </div>
+
+                    <p class="settings-hint" id="themeLabel">Light Mode</p>
+
+                </div>
+
+            </div>
+
+            <!-- Logout -->
+            <button id="logoutBtn" class="btn btn-primary">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+
+        </div>
 
     </div>
 
@@ -57,10 +84,20 @@
 
         <div class="welcome-card glass">
 
-            <img
-                id="userPhoto"
-                src="assets/images/default-avatar.png"
-                alt="Profile">
+            <!-- Avatar with camera upload overlay -->
+            <div class="avatar-wrapper">
+
+                <div id="userAvatar" class="user-avatar">
+                    <!-- Filled by JS: either <img> or initials -->
+                </div>
+
+                <button class="avatar-camera-btn" id="avatarCameraBtn" title="Change profile photo">
+                    <i class="fas fa-camera"></i>
+                </button>
+
+                <input type="file" id="photoFileInput" accept="image/*" style="display:none;">
+
+            </div>
 
             <div>
 
@@ -207,34 +244,132 @@
 </section>
 
 <script type="module">
-    import {
+import {
     protectPage,
     logout,
-    displayUserInfo
+    observeAuth,
+    updateUserPhoto
 } from "./js/auth.js";
 
 import {
     loadDashboard
 } from "./js/dashboard.js";
 
-// Protect this page
+// ── Theme ─────────────────────────────────
+const themeToggle  = document.getElementById("themeToggle");
+const themeLabel   = document.getElementById("themeLabel");
+const html         = document.documentElement;
+
+function applyTheme(dark) {
+    html.setAttribute("data-theme", dark ? "dark" : "light");
+    themeToggle.checked = dark;
+    themeLabel.textContent = dark ? "Dark Mode" : "Light Mode";
+}
+
+const savedTheme = localStorage.getItem("sn-theme");
+applyTheme(savedTheme === "dark");
+
+themeToggle.addEventListener("change", () => {
+    const isDark = themeToggle.checked;
+    localStorage.setItem("sn-theme", isDark ? "dark" : "light");
+    applyTheme(isDark);
+});
+
+// ── Settings Dropdown ────────────────────
+const settingsBtn      = document.getElementById("settingsBtn");
+const settingsDropdown = document.getElementById("settingsDropdown");
+
+settingsBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = settingsDropdown.classList.toggle("open");
+    settingsDropdown.setAttribute("aria-hidden", String(!isOpen));
+});
+
+document.addEventListener("click", () => {
+    settingsDropdown.classList.remove("open");
+    settingsDropdown.setAttribute("aria-hidden", "true");
+});
+
+settingsDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+// ── Avatar helpers ────────────────────────
+function getInitials(name) {
+    if (!name) return "?";
+    return name.trim().split(/\s+/)
+        .map(w => w[0].toUpperCase())
+        .slice(0, 2)
+        .join("");
+}
+
+const AVATAR_COLORS = [
+    "#6C63FF","#00C6AE","#FF6584","#F5A623","#4A90D9","#7ED321"
+];
+
+function colorForName(name) {
+    if (!name) return AVATAR_COLORS[0];
+    let h = 0;
+    for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xFFFF;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function renderAvatar(photoURL, displayName) {
+    const el = document.getElementById("userAvatar");
+    if (!el) return;
+    if (photoURL) {
+        el.innerHTML = `<img src="${photoURL}" alt="${displayName || 'User'}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+        const initials = getInitials(displayName);
+        const bg       = colorForName(displayName);
+        el.innerHTML   = `<span style="background:${bg};width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;letter-spacing:1px;">${initials}</span>`;
+    }
+}
+
+// ── Auth & user info ──────────────────────
 protectPage();
 
-// Display logged-in user's info
-displayUserInfo();
+observeAuth(({ loggedIn, user, profile }) => {
+    if (!loggedIn) return;
 
-// Load compression history
+    const nameEl = document.getElementById("userName");
+    if (nameEl) nameEl.textContent = user.displayName || "User";
+
+    // Prefer Firestore photoURL (custom upload) over auth photoURL
+    const photo = (profile && profile.photoURL) ? profile.photoURL : (user.photoURL || "");
+    renderAvatar(photo, user.displayName);
+});
+
+// ── Photo upload ──────────────────────────
+const photoFileInput  = document.getElementById("photoFileInput");
+const avatarCameraBtn = document.getElementById("avatarCameraBtn");
+
+avatarCameraBtn.addEventListener("click", () => photoFileInput.click());
+
+photoFileInput.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    avatarCameraBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    avatarCameraBtn.disabled  = true;
+
+    const result = await updateUserPhoto(file);
+
+    avatarCameraBtn.innerHTML = '<i class="fas fa-camera"></i>';
+    avatarCameraBtn.disabled  = false;
+
+    if (result.success) {
+        renderAvatar(result.photoURL, document.getElementById("userName").textContent);
+    } else {
+        alert("Photo upload failed: " + result.message);
+    }
+});
+
+// ── History ───────────────────────────────
 loadDashboard();
 
-// Logout Button
-document
-    .getElementById("logoutBtn")
-    .addEventListener("click", async () => {
-
-        await logout();
-
-    });
-
+// ── Logout ────────────────────────────────
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+    await logout();
+});
 </script>
 
 </body>

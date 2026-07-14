@@ -159,6 +159,7 @@ import {
     redirectIfLoggedIn
 } from "./js/auth.js";
 
+// If already logged in, go straight to dashboard
 redirectIfLoggedIn();
 
 const loginForm = document.getElementById("loginForm");
@@ -201,6 +202,9 @@ loginForm.addEventListener("submit", async (e) => {
 
 googleBtn.addEventListener("click", async () => {
 
+    googleBtn.disabled = true;
+    googleBtn.innerHTML = '<i class="fab fa-google"></i> Connecting...';
+
     const result = await googleLogin();
 
     if (result.success) {
@@ -209,7 +213,14 @@ googleBtn.addEventListener("click", async () => {
 
     } else {
 
-        alert(result.message);
+        // Re-enable button if login failed or was cancelled
+        googleBtn.disabled = false;
+        googleBtn.innerHTML = '<i class="fab fa-google"></i> Continue with Google';
+
+        // Only show error for real failures (not user closing the popup)
+        if (!result.message.includes("popup-closed") && !result.message.includes("cancelled")) {
+            alert("Google login failed: " + result.message);
+        }
 
     }
 

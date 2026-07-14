@@ -22,7 +22,8 @@ import {
 import {
     doc,
     setDoc,
-    getDoc
+    getDoc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 // ==========================================
@@ -109,55 +110,53 @@ export async function login(email, password) {
 }
 
 // ==========================================
-// GOOGLE LOGIN
+// GOOGLE LOGIN (popup-based — instant)
 // ==========================================
 
 export async function googleLogin() {
 
     try {
 
-        const result = await signInWithPopup(
-            auth,
-            provider
-        );
+        const result = await signInWithPopup(auth, provider);
 
         const user = result.user;
 
         const userRef = doc(db, "users", user.uid);
-
         const snapshot = await getDoc(userRef);
 
         if (!snapshot.exists()) {
 
             await setDoc(userRef, {
-
                 uid: user.uid,
                 name: user.displayName,
                 email: user.email,
-                photoURL: user.photoURL,
+                photoURL: user.photoURL || "",
                 createdAt: new Date().toISOString()
-
             });
 
         }
 
-        return {
-
-            success: true,
-            message: "Google login successful."
-
-        };
+        return { success: true, message: "Google login successful." };
 
     } catch (error) {
 
         return {
-
             success: false,
             message: error.message
-
         };
 
     }
+
+}
+
+// ==========================================
+// HANDLE GOOGLE REDIRECT RESULT (stub)
+// ==========================================
+
+// No longer used — kept as a no-op so login.html import doesn't break
+export async function handleRedirectResult() {
+
+    return { success: false, message: "No redirect result." };
 
 }
 // ==========================================
@@ -486,6 +485,52 @@ export function displayUserInfo() {
 }
 
 // ==========================================
+// UPDATE USER PROFILE PHOTO
+// ==========================================
+
+export async function updateUserPhoto(file) {
+
+    return new Promise((resolve) => {
+
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+
+            const base64 = e.target.result;
+
+            try {
+
+                const user = auth.currentUser;
+
+                if (!user) {
+                    resolve({ success: false, message: "Not logged in." });
+                    return;
+                }
+
+                // Update Firestore
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, { photoURL: base64 });
+
+                // Update Firebase Auth profile
+                await updateProfile(user, { photoURL: base64 });
+
+                resolve({ success: true, photoURL: base64 });
+
+            } catch (err) {
+
+                resolve({ success: false, message: err.message });
+
+            }
+
+        };
+
+        reader.readAsDataURL(file);
+
+    });
+
+}
+
+// ==========================================
 // REDIRECT IF ALREADY LOGGED IN
 // ==========================================
 
@@ -522,6 +567,7 @@ window.ShrinkNestAuth = {
     signup,
     login,
     googleLogin,
+    handleRedirectResult,
     forgotPassword,
     logout,
     observeAuth,
@@ -533,6 +579,7 @@ window.ShrinkNestAuth = {
     checkPasswordStrength,
     updateNavbarAuth,
     displayUserInfo,
+    updateUserPhoto,
     redirectIfLoggedIn,
     initializeAuth
 
