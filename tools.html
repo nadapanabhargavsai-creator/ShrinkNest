@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Tools | ShrinkNest</title>
+    <meta name="description" content="Browse every compression and file tool available on ShrinkNest — PDF, Image, Video compressors and more.">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+
+    <!-- Main CSS + Tools Page CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/tools-page.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/favicon/favicon.ico">
+</head>
+<body>
+
+<!-- =======================
+     NAVBAR
+======================== -->
+<header class="navbar">
+    <div class="container nav-container">
+
+        <a href="index.html" class="logo">
+            <span class="logo-icon">🪺</span>
+            <span class="logo-text">ShrinkNest</span>
+        </a>
+
+        <nav id="navMenu">
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="tools.html" class="nav-active">Tools</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li>
+                    <a href="signup.html" class="signup-btn">Sign Up</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="hamburger" id="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+    </div>
+</header>
+
+
+<!-- =======================
+     PAGE HERO
+======================== -->
+<section class="tools-hero">
+    <div class="container">
+        <span class="hero-badge">Everything in one place</span>
+        <h1>All <span>Tools</span></h1>
+        <p>Browse every compressor and utility ShrinkNest offers. More tools are added regularly.</p>
+
+        <!-- Search bar -->
+        <div class="tools-search-wrap">
+            <i class="fas fa-search tools-search-icon"></i>
+            <input
+                type="text"
+                id="toolSearch"
+                class="tools-search"
+                placeholder="Search tools…"
+                autocomplete="off"
+            >
+        </div>
+    </div>
+</section>
+
+
+<!-- =======================
+     TOOLS CATALOGUE
+======================== -->
+<section class="tools-catalogue">
+    <div class="container">
+
+        <!-- ── Category: Compression ── -->
+        <div class="catalogue-category" data-category="compression">
+            <div class="category-label">
+                <span class="category-dot"></span>
+                Compression
+            </div>
+
+            <div class="catalogue-grid" id="toolsGrid">
+
+                <!-- PDF Compressor -->
+                <a href="tools/pdf-compress.html" class="cat-card glass tool-item" data-name="pdf compressor">
+                    <div class="cat-card-icon" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53);">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="cat-card-body">
+                        <h3>PDF Compressor</h3>
+                        <p>Reduce PDF size while preserving quality.</p>
+                    </div>
+                    <span class="cat-card-arrow"><i class="fas fa-arrow-right"></i></span>
+                </a>
+
+                <!-- Image Compressor -->
+                <a href="tools/image-compress.html" class="cat-card glass tool-item" data-name="image compressor jpg png webp">
+                    <div class="cat-card-icon" style="background:linear-gradient(135deg,#00C6FF,#0072FF);">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div class="cat-card-body">
+                        <h3>Image Compressor</h3>
+                        <p>Compress JPG, PNG and WEBP images instantly.</p>
+                    </div>
+                    <span class="cat-card-arrow"><i class="fas fa-arrow-right"></i></span>
+                </a>
+
+                <!-- Video Compressor -->
+                <a href="tools/video-compress.html" class="cat-card glass tool-item" data-name="video compressor mp4 mov">
+                    <div class="cat-card-icon" style="background:linear-gradient(135deg,#A855F7,#6C63FF);">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="cat-card-body">
+                        <h3>Video Compressor</h3>
+                        <p>Compress MP4 and MOV videos directly in your browser.</p>
+                    </div>
+                    <span class="cat-card-arrow"><i class="fas fa-arrow-right"></i></span>
+                </a>
+
+                <!-- ─── PLACEHOLDER CARDS — add real tools here later ─── -->
+
+                <!-- Audio Compressor (coming soon) -->
+                <div class="cat-card glass tool-item coming-soon" data-name="audio compressor mp3">
+                    <div class="cat-card-icon" style="background:linear-gradient(135deg,#F7971E,#FFD200);">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <div class="cat-card-body">
+                        <h3>Audio Compressor</h3>
+                        <p>Compress MP3, WAV and AAC audio files.</p>
+                    </div>
+                    <span class="coming-badge">Coming Soon</span>
+                </div>
+
+                <!-- ZIP / Archive -->
+                <a href="tools/file-archive.html" class="cat-card glass tool-item" data-name="zip archive file archiver bundle">
+                    <div class="cat-card-icon" style="background:linear-gradient(135deg,#11998e,#38ef7d);">
+                        <i class="fas fa-file-zipper"></i>
+                    </div>
+                    <div class="cat-card-body">
+                        <h3>File Archiver</h3>
+                        <p>Bundle and compress multiple files into a single ZIP archive.</p>
+                    </div>
+                    <span class="cat-card-arrow"><i class="fas fa-arrow-right"></i></span>
+                </a>
+
+            </div><!-- /.catalogue-grid -->
+
+            <!-- No-results message (hidden by default) -->
+            <div class="no-results" id="noResults" style="display:none;">
+                <i class="fas fa-magnifying-glass-minus"></i>
+                <p>No tools match your search. Try a different keyword.</p>
+            </div>
+
+        </div><!-- /.catalogue-category -->
+
+    </div>
+</section>
+
+
+<!-- =======================
+     FOOTER
+======================== -->
+<footer>
+    <div class="container footer-container">
+
+        <div class="footer-logo">
+            <span>🪺</span>
+            <h3>ShrinkNest</h3>
+            <p>Compress Anything. Store Everything.</p>
+        </div>
+
+        <div class="footer-links">
+            <h4>Quick Links</h4>
+            <a href="index.html">Home</a>
+            <a href="tools.html">Tools</a>
+            <a href="login.html">Login</a>
+            <a href="signup.html">Sign Up</a>
+        </div>
+
+        <div class="footer-social">
+            <h4>Follow Us</h4>
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-github"></i></a>
+        </div>
+
+    </div>
+
+    <div class="copyright">
+        © 2026 ShrinkNest. All rights reserved.
+    </div>
+</footer>
+
+
+<!-- Navbar JS -->
+<script>
+const hamburger = document.getElementById("hamburger");
+const navMenu   = document.getElementById("navMenu");
+
+hamburger.addEventListener("click", () => {
+    hamburger.classList.toggle("active");
+    navMenu.classList.toggle("active");
+});
+
+document.querySelectorAll(".nav-links a").forEach(link => {
+    link.addEventListener("click", () => {
+        hamburger.classList.remove("active");
+        navMenu.classList.remove("active");
+    });
+});
+
+/* Live search filter */
+const searchInput = document.getElementById("toolSearch");
+const toolItems   = document.querySelectorAll(".tool-item");
+const noResults   = document.getElementById("noResults");
+
+searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase().trim();
+    let visible = 0;
+
+    toolItems.forEach(card => {
+        const name = card.dataset.name || "";
+        const match = name.includes(query);
+        card.style.display = match ? "" : "none";
+        if (match) visible++;
+    });
+
+    noResults.style.display = visible === 0 ? "flex" : "none";
+});
+</script>
+
+</body>
+</html>

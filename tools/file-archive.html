@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Archiver — ShrinkNest</title>
+    <meta name="description" content="Bundle and compress multiple files into a single ZIP archive, directly in your browser. No uploads. 100% private.">
+
+    <link rel="icon" href="../assets/favicon/favicon.ico">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous">
+
+    <!-- JSZip (browser ZIP library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/tools.css">
+
+    <style>
+        /* ── Archiver-specific extras ── */
+
+        /* Header gradient strip */
+        .archiver-hero {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            padding: 52px 0 44px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .archiver-hero .tool-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,.2);
+            padding: 7px 18px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 18px;
+            letter-spacing: .3px;
+        }
+
+        .archiver-hero h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .archiver-hero p {
+            font-size: 16px;
+            opacity: .88;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Drop zone */
+        .drop-zone {
+            border: 2.5px dashed #11998e;
+            border-radius: 20px;
+            padding: 55px 30px;
+            text-align: center;
+            background: #fff;
+            cursor: pointer;
+            transition: .3s;
+            position: relative;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            background: #f0fff8;
+            border-color: #38ef7d;
+        }
+
+        .drop-zone input[type="file"] { display: none; }
+
+        .drop-zone-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            margin: 0 auto 20px;
+        }
+
+        .drop-zone h3 {
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone p { color: #777; font-size: 14px; }
+
+        .drop-zone .browse-link {
+            color: #11998e;
+            font-weight: 600;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* ── ZIP name input ── */
+        .zip-name-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 28px;
+            background: #fff;
+            padding: 18px 22px;
+            border-radius: 16px;
+            border: 1px solid #eee;
+        }
+
+        .zip-name-row label {
+            font-weight: 600;
+            white-space: nowrap;
+            font-size: 14px;
+            color: #444;
+        }
+
+        .zip-name-row input {
+            flex: 1;
+            padding: 11px 16px;
+            border-radius: 10px;
+            border: 1.5px solid #ddd;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color .25s;
+        }
+
+        .zip-name-row input:focus { border-color: #11998e; }
+
+        .zip-ext {
+            font-weight: 700;
+            color: #11998e;
+            font-size: 15px;
+        }
+
+        /* ── File list ── */
+        .file-list-wrap {
+            margin-top: 28px;
+            display: none;
+        }
+
+        .file-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .file-list-header h4 {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .file-count-badge {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 50px;
+        }
+
+        .clear-all-btn {
+            background: none;
+            border: 1.5px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .25s;
+        }
+
+        .clear-all-btn:hover {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        /* Individual file row */
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .file-list::-webkit-scrollbar { width: 6px; }
+        .file-list::-webkit-scrollbar-thumb { background: #11998e; border-radius: 10px; }
+
+        .file-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 13px 16px;
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #eee;
+            animation: rowIn .25s ease;
+        }
+
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-row-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .file-row-info { flex: 1; min-width: 0; }
+
+        .file-row-name {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-row-size {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .file-row-remove {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 17px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: .2s;
+            flex-shrink: 0;
+        }
+
+        .file-row-remove:hover { color: #ff6b6b; background: #fff0f0; }
+
+        /* ── Stats bar ── */
+        .stats-bar {
+            display: flex;
+            gap: 14px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-chip {
+            flex: 1;
+            min-width: 120px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 14px;
+            padding: 14px 18px;
+            text-align: center;
+        }
+
+        .stat-chip .stat-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #11998e;
+            display: block;
+        }
+
+        .stat-chip .stat-lbl {
+            font-size: 11px;
+            color: #999;
+            margin-top: 3px;
+            display: block;
+        }
+
+        /* ── Compression level ── */
+        .compression-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 22px;
+            background: #fff;
+            padding: 18px 22px;
+            border-radius: 16px;
+            border: 1px solid #eee;
+            flex-wrap: wrap;
+        }
+
+        .compression-row label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #444;
+            white-space: nowrap;
+        }
+
+        .level-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .level-pill {
+            padding: 7px 18px;
+            border-radius: 50px;
+            border: 1.5px solid #ddd;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            background: #fafafa;
+            transition: .2s;
+            color: #555;
+        }
+
+        .level-pill.active,
+        .level-pill:hover {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        /* ── Progress ── */
+        .archive-progress {
+            margin-top: 26px;
+            display: none;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 12px;
+            background: #e6f7f3;
+            border-radius: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #11998e, #38ef7d);
+            border-radius: 30px;
+            transition: width .25s ease;
+        }
+
+        /* ── Archive button ── */
+        .archive-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 28px rgba(17,153,142,.35);
+            transition: transform .3s, box-shadow .3s, opacity .3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .archive-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.2) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform .55s;
+        }
+
+        .archive-btn:not(:disabled):hover::before { transform: translateX(100%); }
+        .archive-btn:not(:disabled):hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(17,153,142,.45); }
+        .archive-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+        /* ── Success card ── */
+        .success-card {
+            margin-top: 28px;
+            padding: 30px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #f0fff8, #e6f7f3);
+            border: 1.5px solid #38ef7d;
+            text-align: center;
+            display: none;
+            animation: toolFade .4s ease;
+        }
+
+        .success-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #fff;
+            margin: 0 auto 16px;
+        }
+
+        .success-card h3 {
+            font-size: 20px;
+            color: #11998e;
+            margin-bottom: 8px;
+        }
+
+        .success-card p { color: #555; font-size: 14px; margin-bottom: 6px; }
+
+        .success-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 18px 0 24px;
+            flex-wrap: wrap;
+        }
+
+        .success-stat { text-align: center; }
+        .success-stat .val { font-size: 22px; font-weight: 700; color: #11998e; }
+        .success-stat .lbl { font-size: 12px; color: #888; }
+
+        .download-zip-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 36px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(17,153,142,.35);
+            transition: .3s;
+            text-decoration: none;
+        }
+
+        .download-zip-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(17,153,142,.45); }
+
+        .new-archive-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            border: 2px solid #11998e;
+            color: #11998e;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            background: #fff;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: .25s;
+        }
+
+        .new-archive-btn:hover { background: #11998e; color: #fff; }
+
+        /* ── Responsive ── */
+        @media (max-width: 576px) {
+            .archiver-hero h1 { font-size: 30px; }
+            .zip-name-row { flex-direction: column; align-items: flex-start; }
+            .compression-row { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     NAVBAR
+═══════════════════════════════ -->
+<nav class="navbar">
+    <div class="container nav-container">
+
+        <a href="../index.html" class="logo">
+            🪺 <span>ShrinkNest</span>
+        </a>
+
+        <a href="../tools.html" class="btn btn-outline" style="border:2px solid var(--primary);color:var(--primary);padding:10px 22px;border-radius:50px;font-weight:600;font-size:14px;transition:.3s;" onmouseover="this.style.background='var(--primary)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--primary)'">
+            ← All Tools
+        </a>
+
+    </div>
+</nav>
+
+
+<!-- ═══════════════════════════════
+     HERO STRIP
+═══════════════════════════════ -->
+<section class="archiver-hero">
+    <div class="container">
+        <div class="tool-badge">
+            <i class="fas fa-file-zipper"></i>
+            File Archiver
+        </div>
+        <h1>Bundle Files into a ZIP</h1>
+        <p>Select any files, choose a compression level, and download a single ZIP archive — instantly in your browser.</p>
+    </div>
+</section>
+
+
+<!-- ═══════════════════════════════
+     TOOL BODY
+═══════════════════════════════ -->
+<section class="tool-page" style="padding-top:50px;">
+<div class="container">
+<div class="tool-container glass" style="max-width:800px;">
+
+
+    <!-- ── Drop zone ── -->
+    <label class="drop-zone" id="dropZone" for="fileInput">
+        <div class="drop-zone-icon">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <h3>Drag &amp; Drop Files Here</h3>
+        <p>or <span class="browse-link">click to browse</span> — any file type accepted</p>
+        <input type="file" id="fileInput" multiple>
+    </label>
+
+
+    <!-- ── ZIP file name ── -->
+    <div class="zip-name-row">
+        <label for="zipName"><i class="fas fa-file-zipper" style="color:#11998e;margin-right:6px;"></i>Archive name</label>
+        <input type="text" id="zipName" value="my-archive" placeholder="my-archive" maxlength="80">
+        <span class="zip-ext">.zip</span>
+    </div>
+
+
+    <!-- ── Compression level ── -->
+    <div class="compression-row">
+        <label><i class="fas fa-sliders" style="color:#11998e;margin-right:6px;"></i>Compression level</label>
+        <div class="level-pills" id="levelPills">
+            <button class="level-pill" data-level="0">None (fastest)</button>
+            <button class="level-pill active" data-level="6">Balanced</button>
+            <button class="level-pill" data-level="9">Maximum</button>
+        </div>
+    </div>
+
+
+    <!-- ── File list ── -->
+    <div class="file-list-wrap" id="fileListWrap">
+
+        <div class="file-list-header">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <h4>Files to archive</h4>
+                <span class="file-count-badge" id="fileCountBadge">0</span>
+            </div>
+            <button class="clear-all-btn" id="clearAllBtn">
+                <i class="fas fa-trash-can"></i> Clear all
+            </button>
+        </div>
+
+        <div class="file-list" id="fileList"></div>
+
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-chip">
+                <span class="stat-val" id="statFiles">0</span>
+                <span class="stat-lbl">Files</span>
+            </div>
+            <div class="stat-chip">
+                <span class="stat-val" id="statSize">0 KB</span>
+                <span class="stat-lbl">Total size</span>
+            </div>
+            <div class="stat-chip">
+                <span class="stat-val" id="statTypes">—</span>
+                <span class="stat-lbl">File types</span>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ── Progress ── -->
+    <div class="archive-progress" id="archiveProgress">
+        <div class="progress-label">
+            <span id="progressLabel">Creating archive…</span>
+            <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+
+    <!-- ── Create ZIP button ── -->
+    <button class="archive-btn" id="archiveBtn" disabled>
+        <i class="fas fa-file-zipper"></i>
+        Create ZIP Archive
+    </button>
+
+
+    <!-- ── Success card ── -->
+    <div class="success-card" id="successCard">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+        <h3>Archive Ready!</h3>
+        <p>Your ZIP file has been created successfully.</p>
+
+        <div class="success-stats">
+            <div class="success-stat">
+                <div class="val" id="resFiles">—</div>
+                <div class="lbl">Files packed</div>
+            </div>
+            <div class="success-stat">
+                <div class="val" id="resOriginal">—</div>
+                <div class="lbl">Original size</div>
+            </div>
+            <div class="success-stat">
+                <div class="val" id="resZip">—</div>
+                <div class="lbl">ZIP size</div>
+            </div>
+            <div class="success-stat">
+                <div class="val" id="resSaved">—</div>
+                <div class="lbl">Space saved</div>
+            </div>
+        </div>
+
+        <a id="downloadLink" class="download-zip-btn">
+            <i class="fas fa-download"></i>
+            Download ZIP
+        </a>
+
+        <br>
+
+        <button class="new-archive-btn" id="newArchiveBtn">
+            <i class="fas fa-plus"></i> Create new archive
+        </button>
+    </div>
+
+
+</div><!-- /.tool-container -->
+</div><!-- /.container -->
+</section>
+
+
+<!-- ═══════════════════════════════
+     FOOTER
+═══════════════════════════════ -->
+<footer>
+    <div class="container footer-container">
+        <div class="footer-logo">
+            <span>🪺</span>
+            <h3>ShrinkNest</h3>
+            <p>Compress Anything. Store Everything.</p>
+        </div>
+        <div class="footer-links">
+            <h4>Quick Links</h4>
+            <a href="../index.html">Home</a>
+            <a href="../tools.html">Tools</a>
+            <a href="../login.html">Login</a>
+            <a href="../signup.html">Sign Up</a>
+        </div>
+        <div class="footer-social">
+            <h4>Follow Us</h4>
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-github"></i></a>
+        </div>
+    </div>
+    <div class="copyright">© 2026 ShrinkNest. All rights reserved.</div>
+</footer>
+
+
+<!-- ═══════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════ -->
+<script>
+/* ─── State ─── */
+let files = [];           // { file: File, id: number }
+let nextId = 0;
+let compressionLevel = 6; // JSZip compression 0-9
+let zipBlob = null;
+
+/* ─── DOM refs ─── */
+const fileInput     = document.getElementById('fileInput');
+const dropZone      = document.getElementById('dropZone');
+const fileListWrap  = document.getElementById('fileListWrap');
+const fileListEl    = document.getElementById('fileList');
+const fileCountBadge= document.getElementById('fileCountBadge');
+const clearAllBtn   = document.getElementById('clearAllBtn');
+const archiveBtn    = document.getElementById('archiveBtn');
+const archiveProgress = document.getElementById('archiveProgress');
+const progressFill  = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+const progressPct   = document.getElementById('progressPct');
+const successCard   = document.getElementById('successCard');
+const downloadLink  = document.getElementById('downloadLink');
+const newArchiveBtn = document.getElementById('newArchiveBtn');
+const zipNameInput  = document.getElementById('zipName');
+const levelPills    = document.querySelectorAll('.level-pill');
+
+// Stats
+const statFiles  = document.getElementById('statFiles');
+const statSize   = document.getElementById('statSize');
+const statTypes  = document.getElementById('statTypes');
+const resFiles   = document.getElementById('resFiles');
+const resOriginal= document.getElementById('resOriginal');
+const resZip     = document.getElementById('resZip');
+const resSaved   = document.getElementById('resSaved');
+
+/* ─── Helpers ─── */
+function formatSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B','KB','MB','GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function getExt(name) {
+    const parts = name.split('.');
+    return parts.length > 1 ? parts.pop().toLowerCase() : '?';
+}
+
+function iconAndColor(ext) {
+    const map = {
+        // Images
+        jpg:'fa-image',jpeg:'fa-image',png:'fa-image',webp:'fa-image',gif:'fa-image',svg:'fa-image',bmp:'fa-image',
+        // Video
+        mp4:'fa-film',mov:'fa-film',avi:'fa-film',mkv:'fa-film',webm:'fa-film',
+        // Audio
+        mp3:'fa-music',wav:'fa-music',aac:'fa-music',flac:'fa-music',ogg:'fa-music',
+        // Docs
+        pdf:'fa-file-pdf',doc:'fa-file-word',docx:'fa-file-word',xls:'fa-file-excel',xlsx:'fa-file-excel',
+        ppt:'fa-file-powerpoint',pptx:'fa-file-powerpoint',txt:'fa-file-lines',csv:'fa-file-csv',
+        // Code
+        html:'fa-code',css:'fa-code',js:'fa-code',ts:'fa-code',json:'fa-code',xml:'fa-code',
+        py:'fa-code',java:'fa-code',cpp:'fa-code',c:'fa-code',php:'fa-code',
+        // Archives
+        zip:'fa-file-zipper',rar:'fa-file-zipper',gz:'fa-file-zipper','7z':'fa-file-zipper',
+    };
+    const colors = {
+        'fa-image':'#0072ff','fa-film':'#a855f7','fa-music':'#f7971e',
+        'fa-file-pdf':'#ff6b6b','fa-file-word':'#2b7cd3','fa-file-excel':'#1d7044',
+        'fa-file-powerpoint':'#c0392b','fa-file-lines':'#888','fa-file-csv':'#1d7044',
+        'fa-code':'#6C63FF','fa-file-zipper':'#11998e',
+    };
+    const icon = map[ext] || 'fa-file';
+    const color = colors[icon] || '#aaa';
+    return { icon, color };
+}
+
+/* ─── Add files ─── */
+function addFiles(newFiles) {
+    Array.from(newFiles).forEach(f => {
+        // skip duplicates by name+size
+        if (files.some(e => e.file.name === f.name && e.file.size === f.size)) return;
+        files.push({ file: f, id: nextId++ });
+    });
+    renderList();
+}
+
+/* ─── Render file list ─── */
+function renderList() {
+    fileListEl.innerHTML = '';
+
+    if (files.length === 0) {
+        fileListWrap.style.display = 'none';
+        archiveBtn.disabled = true;
+        successCard.style.display = 'none';
+        return;
+    }
+
+    fileListWrap.style.display = 'block';
+    archiveBtn.disabled = false;
+    fileCountBadge.textContent = files.length;
+
+    files.forEach(entry => {
+        const ext = getExt(entry.file.name);
+        const { icon, color } = iconAndColor(ext);
+
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        row.dataset.id = entry.id;
+
+        row.innerHTML = `
+            <div class="file-row-icon" style="background:${color}20;">
+                <i class="fas ${icon}" style="color:${color};font-size:18px;"></i>
+            </div>
+            <div class="file-row-info">
+                <div class="file-row-name" title="${entry.file.name}">${entry.file.name}</div>
+                <div class="file-row-size">${formatSize(entry.file.size)} &nbsp;·&nbsp; .${ext.toUpperCase()}</div>
+            </div>
+            <button class="file-row-remove" title="Remove" onclick="removeFile(${entry.id})">
+                <i class="fas fa-xmark"></i>
+            </button>
+        `;
+        fileListEl.appendChild(row);
+    });
+
+    updateStats();
+}
+
+/* ─── Remove one file ─── */
+function removeFile(id) {
+    files = files.filter(e => e.id !== id);
+    renderList();
+}
+
+/* ─── Clear all ─── */
+clearAllBtn.addEventListener('click', () => {
+    files = [];
+    fileInput.value = '';
+    zipBlob = null;
+    successCard.style.display = 'none';
+    renderList();
+});
+
+/* ─── Stats ─── */
+function updateStats() {
+    const total = files.reduce((sum, e) => sum + e.file.size, 0);
+    const exts  = [...new Set(files.map(e => '.' + getExt(e.file.name).toUpperCase()))];
+    statFiles.textContent = files.length;
+    statSize.textContent  = formatSize(total);
+    statTypes.textContent = exts.length <= 4 ? exts.join(', ') : exts.slice(0,3).join(', ') + ' +' + (exts.length-3);
+}
+
+/* ─── Compression level pills ─── */
+levelPills.forEach(pill => {
+    pill.addEventListener('click', () => {
+        levelPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        compressionLevel = parseInt(pill.dataset.level, 10);
+    });
+});
+
+/* ─── File input change ─── */
+fileInput.addEventListener('change', () => addFiles(fileInput.files));
+
+/* ─── Drag & Drop ─── */
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    addFiles(e.dataTransfer.files);
+});
+
+/* ─── Create ZIP ─── */
+archiveBtn.addEventListener('click', async () => {
+    if (files.length === 0) return;
+
+    // Show progress
+    successCard.style.display = 'none';
+    archiveProgress.style.display = 'block';
+    archiveBtn.disabled = true;
+    archiveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating archive…';
+    progressFill.style.width = '0%';
+    progressPct.textContent = '0%';
+    progressLabel.textContent = 'Preparing files…';
+
+    const zip = new JSZip();
+
+    // Add files
+    files.forEach(entry => {
+        const compression = compressionLevel === 0 ? 'STORE' : 'DEFLATE';
+        zip.file(entry.file.name, entry.file, {
+            compression,
+            compressionOptions: { level: compressionLevel }
+        });
+    });
+
+    const totalOriginal = files.reduce((s, e) => s + e.file.size, 0);
+
+    try {
+        zipBlob = await zip.generateAsync(
+            {
+                type: 'blob',
+                compression: compressionLevel === 0 ? 'STORE' : 'DEFLATE',
+                compressionOptions: { level: compressionLevel },
+            },
+            meta => {
+                const pct = Math.round(meta.percent);
+                progressFill.style.width = pct + '%';
+                progressPct.textContent  = pct + '%';
+                progressLabel.textContent = pct < 100 ? `Compressing… ${meta.currentFile || ''}` : 'Finalising…';
+            }
+        );
+
+        // Done
+        progressFill.style.width = '100%';
+        progressPct.textContent  = '100%';
+        progressLabel.textContent = 'Done!';
+
+        await new Promise(r => setTimeout(r, 500));
+        archiveProgress.style.display = 'none';
+
+        // Build download link
+        const zipName = (zipNameInput.value.trim() || 'my-archive') + '.zip';
+        const url = URL.createObjectURL(zipBlob);
+        downloadLink.href = url;
+        downloadLink.download = zipName;
+
+        // Result stats
+        const saved = Math.max(0, totalOriginal - zipBlob.size);
+        const savedPct = totalOriginal > 0 ? Math.round((saved / totalOriginal) * 100) : 0;
+        resFiles.textContent    = files.length;
+        resOriginal.textContent = formatSize(totalOriginal);
+        resZip.textContent      = formatSize(zipBlob.size);
+        resSaved.textContent    = savedPct + '%';
+
+        successCard.style.display = 'block';
+        successCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    } catch (err) {
+        alert('Something went wrong while creating the ZIP: ' + err.message);
+        archiveProgress.style.display = 'none';
+    }
+
+    archiveBtn.disabled = false;
+    archiveBtn.innerHTML = '<i class="fas fa-file-zipper"></i> Create ZIP Archive';
+});
+
+/* ─── New archive ─── */
+newArchiveBtn.addEventListener('click', () => {
+    files = [];
+    fileInput.value = '';
+    zipBlob = null;
+    if (downloadLink.href.startsWith('blob:')) URL.revokeObjectURL(downloadLink.href);
+    successCard.style.display = 'none';
+    renderList();
+    dropZone.scrollIntoView({ behavior: 'smooth' });
+});
+
+/* ─── Navbar hamburger (inherited) ─── */
+// (Minimal navbar on this page — no hamburger needed)
+</script>
+
+</body>
+</html>
