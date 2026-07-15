@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Compressor — ShrinkNest</title>
+    <meta name="description" content="Compress MP3, WAV, OGG, AAC and FLAC audio files directly in your browser. 100% private — no uploads.">
+
+    <link rel="icon" href="../assets/favicon/favicon.ico">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous">
+
+    <!-- lamejs — pure JS MP3 encoder (no server needed) -->
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/tools.css">
+
+<style>
+/* ══════════════════════════════════════════
+   AUDIO COMPRESSOR — page styles
+   Accent palette: #F7971E (orange) → #FFD200 (gold)
+══════════════════════════════════════════ */
+:root {
+    --a1: #F7971E;
+    --a2: #FFD200;
+    --ag: rgba(247,151,30,.28);
+    --al: #fff9f0;
+}
+
+/* ── Hero ── */
+.ac-hero {
+    background: linear-gradient(135deg, var(--a1), var(--a2));
+    padding: 56px 0 48px;
+    text-align: center;
+    color: #fff;
+}
+.ac-hero .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.2);
+    padding: 7px 18px; border-radius: 50px;
+    font-size: 13px; font-weight: 500; margin-bottom: 18px;
+}
+.ac-hero h1 { font-size: 44px; font-weight: 700; margin-bottom: 10px; }
+.ac-hero p  { font-size: 16px; opacity: .9; max-width: 520px; margin: 0 auto; }
+
+/* ── Drop zone ── */
+.drop-area {
+    border: 2.5px dashed var(--a1);
+    border-radius: 20px; padding: 52px 30px;
+    text-align: center; background: #fff; cursor: pointer;
+    transition: .3s;
+}
+.drop-area:hover, .drop-area.over { background: var(--al); border-color: var(--a2); }
+.drop-area input { display: none; }
+.drop-icon {
+    width: 74px; height: 74px; border-radius: 20px;
+    background: linear-gradient(135deg, var(--a1), var(--a2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; color: #fff; margin: 0 auto 18px;
+}
+.drop-area h3 { font-size: 22px; margin-bottom: 8px; }
+.drop-area p  { color: #777; font-size: 14px; }
+.browse-link  { color: var(--a1); font-weight: 600; text-decoration: underline; }
+.fmt-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.fmt-tag {
+    background: #f2f2f2; color: #666;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 50px; letter-spacing: .4px;
+}
+
+/* ── Section card wrapper ── */
+.sec {
+    margin-top: 22px; background: #fff;
+    border: 1px solid #eee; border-radius: 20px; padding: 22px 24px;
+    animation: fadeUp .3s ease both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.sec-label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: #aaa; margin-bottom: 16px;
+}
+.sec-label::before {
+    content:''; width:8px; height:8px; border-radius:50%;
+    background: linear-gradient(135deg,var(--a1),var(--a2)); flex-shrink:0;
+}
+
+/* ── File info row ── */
+.file-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.file-ico {
+    width:52px; height:52px; border-radius:14px;
+    background: linear-gradient(135deg,var(--a1),var(--a2));
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; color:#fff; flex-shrink:0;
+}
+.file-meta h4 { font-size:15px; font-weight:600; margin-bottom:4px; word-break:break-all; }
+.file-meta p  { font-size:12px; color:#888; }
+.tag-row { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+.tag {
+    background:#f5f5f5; color:#555;
+    font-size:11px; font-weight:600;
+    padding:5px 12px; border-radius:50px;
+}
+.tag.accent { background:#fff3e0; color:var(--a1); }
+
+/* ── Waveform ── */
+.wave-box {
+    margin-top:14px; background:#fafafa;
+    border:1px solid #f0f0f0; border-radius:12px; padding:10px 12px;
+    position:relative;
+}
+.wave-lbl {
+    font-size:10px; font-weight:700; letter-spacing:.8px;
+    text-transform:uppercase; color:#ccc; margin-bottom:6px;
+}
+canvas.wave { width:100%; height:72px; display:block; border-radius:6px; }
+
+/* ── Audio player ── */
+.player-wrap { margin-top:12px; }
+.player-wrap audio { width:100%; border-radius:50px; accent-color:var(--a1); }
+
+/* ── Presets ── */
+.preset-row {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+    gap:10px;
+}
+.preset {
+    border:2px solid #eee; border-radius:14px; padding:14px 12px;
+    cursor:pointer; transition:.22s; text-align:center; background:#fafafa;
+    user-select:none;
+}
+.preset:hover    { border-color:var(--a1); background:var(--al); }
+.preset.on       { border-color:var(--a1); background:linear-gradient(135deg,#fff3e0,var(--al)); }
+.preset .pi      { font-size:22px; margin-bottom:7px; }
+.preset .pn      { font-size:13px; font-weight:700; margin-bottom:3px; }
+.preset .pd      { font-size:11px; color:#999; line-height:1.4; }
+.preset.on .pn   { color:var(--a1); }
+
+/* ── Custom sliders ── */
+.custom-wrap { margin-top:16px; display:none; }
+.custom-wrap.show { display:block; animation:fadeUp .2s ease; }
+.ctrl-row {
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:12px; flex-wrap:wrap;
+}
+.ctrl-row label {
+    font-size:13px; font-weight:600; color:#444; min-width:100px;
+}
+.ctrl-row select,
+.ctrl-row input[type=range] {
+    flex:1; padding:10px 14px;
+    border-radius:10px; border:1.5px solid #ddd;
+    font-family:'Poppins',sans-serif; font-size:13px;
+    outline:none; transition:border-color .2s; background:#fff;
+}
+.ctrl-row select:focus,
+.ctrl-row input[type=range]:focus { border-color:var(--a1); }
+.ctrl-val { min-width:70px; text-align:right; font-size:13px; font-weight:700; color:var(--a1); }
+
+/* ── Compress button ── */
+.do-btn {
+    width:100%; padding:16px; border:none; border-radius:50px;
+    background:linear-gradient(135deg,var(--a1),var(--a2));
+    color:#fff; font-family:'Poppins',sans-serif;
+    font-size:16px; font-weight:700; cursor:pointer;
+    margin-top:24px;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    box-shadow:0 8px 28px var(--ag);
+    transition:transform .3s, box-shadow .3s;
+    position:relative; overflow:hidden;
+}
+.do-btn::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);
+    transform:translateX(-100%); transition:transform .5s;
+}
+.do-btn:not(:disabled):hover::before { transform:translateX(100%); }
+.do-btn:not(:disabled):hover { transform:translateY(-3px); box-shadow:0 14px 36px var(--ag); }
+.do-btn:disabled { opacity:.45; cursor:not-allowed; }
+
+/* ── Progress ── */
+.prog-wrap { margin-top:22px; display:none; }
+.prog-top {
+    display:flex; justify-content:space-between;
+    font-size:13px; font-weight:600; color:#555; margin-bottom:8px;
+}
+.prog-track { width:100%; height:12px; background:#ffe8c0; border-radius:30px; overflow:hidden; }
+.prog-fill {
+    height:100%; width:0%;
+    background:linear-gradient(90deg,var(--a1),var(--a2));
+    border-radius:30px; transition:width .2s ease;
+}
+.prog-sub { font-size:11px; color:#bbb; text-align:center; margin-top:5px; }
+
+/* ── Warning ── */
+.warn-box {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:13px 16px; border-radius:12px;
+    background:#fff8e1; color:#8a6000;
+    border-left:4px solid var(--a2);
+    font-size:13px; margin-top:18px;
+}
+.warn-box i { font-size:17px; flex-shrink:0; margin-top:1px; }
+
+/* ── Result card ── */
+.result-wrap { margin-top:24px; display:none; border-radius:20px; overflow:hidden; border:1.5px solid #ffe0a0; animation:fadeUp .4s ease; }
+.result-hdr {
+    background:linear-gradient(135deg,var(--a1),var(--a2));
+    padding:20px 24px; display:flex; align-items:center; gap:14px;
+}
+.result-hdr .r-icon {
+    width:48px; height:48px; border-radius:50%;
+    background:rgba(255,255,255,.25);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; color:#fff;
+}
+.result-hdr h3 { color:#fff; font-size:18px; margin-bottom:2px; }
+.result-hdr p  { color:rgba(255,255,255,.8); font-size:13px; }
+.result-body { background:#fff; padding:22px 24px; }
+
+/* stats grid */
+.stat-grid {
+    display:grid; grid-template-columns:1fr auto 1fr; gap:12px;
+    align-items:center; margin-bottom:20px;
+}
+.stat-col { text-align:center; }
+.stat-col .col-lbl {
+    font-size:11px; font-weight:700; letter-spacing:.7px;
+    text-transform:uppercase; color:#bbb; margin-bottom:10px;
+}
+.stat-item {
+    background:#fafafa; border:1px solid #f0f0f0;
+    border-radius:12px; padding:13px 10px; margin-bottom:8px;
+}
+.stat-item .sv { font-size:18px; font-weight:700; color:#2d2d2d; display:block; }
+.stat-item .sk { font-size:10px; color:#aaa; margin-top:2px; display:block; }
+.stat-col.after .sv { color:var(--a1); }
+.arrow-mid { text-align:center; color:#ddd; font-size:18px; }
+.saved-chip {
+    display:inline-block;
+    background:linear-gradient(135deg,var(--a1),var(--a2));
+    color:#fff; font-size:12px; font-weight:700;
+    padding:5px 14px; border-radius:50px; margin-bottom:14px;
+}
+
+/* action row */
+.act-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.dl-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:13px 30px; border-radius:50px;
+    background:linear-gradient(135deg,var(--a1),var(--a2));
+    color:#fff; font-family:'Poppins',sans-serif;
+    font-size:14px; font-weight:700; border:none; cursor:pointer;
+    box-shadow:0 6px 20px var(--ag); transition:.3s; text-decoration:none;
+}
+.dl-btn:hover { transform:translateY(-3px); box-shadow:0 12px 30px var(--ag); }
+.reset-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:12px 24px; border-radius:50px;
+    border:2px solid var(--a1); color:var(--a1);
+    font-family:'Poppins',sans-serif; font-size:13px; font-weight:600;
+    background:#fff; cursor:pointer; transition:.22s;
+}
+.reset-btn:hover { background:var(--a1); color:#fff; }
+
+/* ── Responsive ── */
+@media (max-width:600px) {
+    .ac-hero h1    { font-size:30px; }
+    .preset-row    { grid-template-columns:1fr 1fr; }
+    .stat-grid     { grid-template-columns:1fr; }
+    .arrow-mid     { transform:rotate(90deg); }
+    .act-row       { flex-direction:column; }
+    .dl-btn,.reset-btn { width:100%; justify-content:center; }
+    .ctrl-row      { flex-direction:column; align-items:flex-start; }
+    .ctrl-row label{ min-width:unset; }
+}
+</style>
+</head>
+
+<body>
+<!-- ════════════
+     NAVBAR
+════════════ -->
+<nav class="navbar">
+    <div class="container nav-container">
+        <a href="../index.html" class="logo">🪺 <span>ShrinkNest</span></a>
+        <a href="../tools.html"
+           style="border:2px solid var(--primary);color:var(--primary);padding:10px 22px;border-radius:50px;font-weight:600;font-size:14px;transition:.3s;"
+           onmouseover="this.style.background='var(--primary)';this.style.color='#fff'"
+           onmouseout="this.style.background='transparent';this.style.color='var(--primary)'">
+            ← All Tools
+        </a>
+    </div>
+</nav>
+
+<!-- ════════════
+     HERO
+════════════ -->
+<section class="ac-hero">
+    <div class="container">
+        <div class="badge"><i class="fas fa-music"></i> Audio Compressor</div>
+        <h1>Compress Audio Files</h1>
+        <p>Reduce MP3, WAV, OGG &amp; more — pick a quality preset and download a smaller MP3. Runs 100% in your browser, nothing is uploaded.</p>
+    </div>
+</section>
+
+<!-- ════════════
+     TOOL
+════════════ -->
+<section class="tool-page" style="padding-top:50px;">
+<div class="container">
+<div class="tool-container glass" style="max-width:820px;">
+
+    <!-- 1 · Drop zone -->
+    <label class="drop-area" id="dropArea" for="audioIn">
+        <div class="drop-icon"><i class="fas fa-music"></i></div>
+        <h3>Drag &amp; Drop Your Audio</h3>
+        <p>or <span class="browse-link">click to browse</span></p>
+        <div class="fmt-row">
+            <span class="fmt-tag">MP3</span><span class="fmt-tag">WAV</span>
+            <span class="fmt-tag">OGG</span><span class="fmt-tag">AAC</span>
+            <span class="fmt-tag">FLAC</span><span class="fmt-tag">M4A</span>
+            <span class="fmt-tag">WEBM</span>
+        </div>
+        <input type="file" id="audioIn" accept="audio/*">
+    </label>
+
+    <!-- large-file warning -->
+    <div class="warn-box" id="sizeWarn" style="display:none;">
+        <i class="fas fa-triangle-exclamation"></i>
+        <div><strong>Large file detected.</strong> Encoding may take up to a minute. Keep this tab open during compression.</div>
+    </div>
+
+    <!-- 2 · Original info (hidden until file loaded) -->
+    <div class="sec" id="origSec" style="display:none;">
+        <div class="sec-label">Original File</div>
+        <div class="file-row">
+            <div class="file-ico"><i class="fas fa-file-audio"></i></div>
+            <div class="file-meta">
+                <h4 id="origName">—</h4>
+                <p  id="origMeta">—</p>
+            </div>
+            <div class="tag-row">
+                <span class="tag"       id="origSize">—</span>
+                <span class="tag accent" id="origDur">—</span>
+            </div>
+        </div>
+        <div class="wave-box">
+            <div class="wave-lbl">Waveform — Original</div>
+            <canvas class="wave" id="wave1"></canvas>
+        </div>
+        <div class="player-wrap"><audio id="player1" controls preload="metadata"></audio></div>
+    </div>
+
+    <!-- 3 · Settings (hidden until file loaded) -->
+    <div class="sec" id="settingsSec" style="display:none;">
+        <div class="sec-label">Compression Settings</div>
+
+        <div class="preset-row" id="presets">
+            <div class="preset on"  data-id="low">
+                <div class="pi">🗜️</div>
+                <div class="pn">Low</div>
+                <div class="pd">48 kbps · Mono<br>22 kHz · Smallest</div>
+            </div>
+            <div class="preset" data-id="med">
+                <div class="pi">⚖️</div>
+                <div class="pn">Medium</div>
+                <div class="pd">96 kbps · Stereo<br>44 kHz · Balanced</div>
+            </div>
+            <div class="preset" data-id="high">
+                <div class="pi">🎵</div>
+                <div class="pn">High</div>
+                <div class="pd">192 kbps · Stereo<br>44 kHz · Best quality</div>
+            </div>
+            <div class="preset" data-id="custom">
+                <div class="pi">🎛️</div>
+                <div class="pn">Custom</div>
+                <div class="pd">Set your own<br>bitrate &amp; options</div>
+            </div>
+        </div>
+
+        <!-- Custom controls -->
+        <div class="custom-wrap" id="customWrap">
+            <div class="ctrl-row">
+                <label>Bitrate</label>
+                <input type="range" id="brRange" min="32" max="320" step="16" value="128">
+                <span class="ctrl-val" id="brVal">128 kbps</span>
+            </div>
+            <div class="ctrl-row">
+                <label>Sample rate</label>
+                <select id="srSel">
+                    <option value="8000">8,000 Hz — Voice (tiny)</option>
+                    <option value="11025">11,025 Hz — Low quality</option>
+                    <option value="22050">22,050 Hz — Reduced</option>
+                    <option value="44100" selected>44,100 Hz — CD quality</option>
+                    <option value="48000">48,000 Hz — Studio</option>
+                </select>
+            </div>
+            <div class="ctrl-row">
+                <label>Channels</label>
+                <select id="chSel">
+                    <option value="auto">Auto (keep original)</option>
+                    <option value="1">Mono (1 ch) — Smaller</option>
+                    <option value="2">Stereo (2 ch)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4 · Compress button -->
+    <button class="do-btn" id="doBtn" disabled>
+        <i class="fas fa-compress-alt"></i> Compress Audio
+    </button>
+
+    <!-- 5 · Progress -->
+    <div class="prog-wrap" id="progWrap">
+        <div class="prog-top">
+            <span id="progLbl">Processing…</span>
+            <span id="progPct">0%</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+        <div class="prog-sub"  id="progSub"></div>
+    </div>
+
+    <!-- 6 · Result -->
+    <div class="result-wrap" id="resultWrap">
+        <div class="result-hdr">
+            <div class="r-icon"><i class="fas fa-check"></i></div>
+            <div>
+                <h3>Audio Compressed!</h3>
+                <p>Your MP3 is ready — preview it, then download.</p>
+            </div>
+        </div>
+        <div class="result-body">
+
+            <!-- before / after stats -->
+            <div class="stat-grid">
+                <div class="stat-col before">
+                    <div class="col-lbl">Original</div>
+                    <div class="stat-item"><span class="sv" id="rOS">—</span><span class="sk">File size</span></div>
+                    <div class="stat-item"><span class="sv" id="rOSR">—</span><span class="sk">Sample rate</span></div>
+                    <div class="stat-item"><span class="sv" id="rOCH">—</span><span class="sk">Channels</span></div>
+                </div>
+                <div class="arrow-mid">
+                    <div class="saved-chip" id="rSaved">—</div><br>
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="stat-col after">
+                    <div class="col-lbl">Compressed</div>
+                    <div class="stat-item"><span class="sv" id="rNS">—</span><span class="sk">File size</span></div>
+                    <div class="stat-item"><span class="sv" id="rNSR">—</span><span class="sk">Sample rate</span></div>
+                    <div class="stat-item"><span class="sv" id="rNCH">—</span><span class="sk">Channels</span></div>
+                </div>
+            </div>
+
+            <!-- compressed waveform + player -->
+            <div class="wave-box" style="margin-bottom:14px;">
+                <div class="wave-lbl">Waveform — Compressed</div>
+                <canvas class="wave" id="wave2"></canvas>
+            </div>
+            <div class="player-wrap" style="margin-bottom:20px;">
+                <audio id="player2" controls preload="metadata"></audio>
+            </div>
+
+            <!-- action buttons -->
+            <div class="act-row">
+                <a id="dlLink" class="dl-btn" download>
+                    <i class="fas fa-download"></i> Download MP3
+                </a>
+                <button class="reset-btn" id="resetBtn">
+                    <i class="fas fa-rotate-left"></i> Compress another
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- .tool-container -->
+</div><!-- .container -->
+</section>
+
+<!-- ════════════ FOOTER ════════════ -->
+<footer>
+    <div class="container footer-container">
+        <div class="footer-logo">
+            <span>🪺</span><h3>ShrinkNest</h3>
+            <p>Compress Anything. Store Everything.</p>
+        </div>
+        <div class="footer-links">
+            <h4>Quick Links</h4>
+            <a href="../index.html">Home</a>
+            <a href="../tools.html">Tools</a>
+            <a href="../login.html">Login</a>
+            <a href="../signup.html">Sign Up</a>
+        </div>
+        <div class="footer-social">
+            <h4>Follow Us</h4>
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-github"></i></a>
+        </div>
+    </div>
+    <div class="copyright">© 2026 ShrinkNest. All rights reserved.</div>
+</footer>
+
+<!-- ═══════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════ -->
+<script>
+/* ───────────────────────────────────────────
+   STATE
+─────────────────────────────────────────── */
+let srcFile   = null;   // the File the user picked
+let srcBuf    = null;   // decoded AudioBuffer
+let outURL    = null;   // blob URL of the encoded MP3
+let activeId  = 'low';  // active preset id
+
+/* preset definitions */
+const PRESETS = {
+    low:    { bitrate:48,  sr:22050, ch:1 },
+    med:    { bitrate:96,  sr:44100, ch:'auto' },
+    high:   { bitrate:192, sr:44100, ch:2 },
+    custom: null,
+};
+
+/* ───────────────────────────────────────────
+   HELPERS
+─────────────────────────────────────────── */
+const $  = id => document.getElementById(id);
+
+function fmtBytes(b) {
+    if (!b) return '0 B';
+    const u = ['B','KB','MB','GB'];
+    const i = Math.min(3, Math.floor(Math.log(b)/Math.log(1024)));
+    return (b/Math.pow(1024,i)).toFixed(1)+' '+u[i];
+}
+function fmtTime(s) {
+    const m=Math.floor(s/60), ss=Math.floor(s%60);
+    return `${m}:${String(ss).padStart(2,'0')}`;
+}
+function fmtHz(hz) {
+    return hz>=1000 ? (hz/1000).toFixed(hz%1000===0?0:1)+' kHz' : hz+' Hz';
+}
+
+/* set progress bar */
+function setP(label, pct, sub='') {
+    $('progLbl').textContent = label;
+    $('progPct').textContent = Math.round(pct)+'%';
+    $('progFill').style.width = pct+'%';
+    $('progSub').textContent  = sub;
+}
+
+/* yield to browser paint */
+const tick = () => new Promise(r=>setTimeout(r,0));
+
+/* ───────────────────────────────────────────
+   WAVEFORM DRAWING
+─────────────────────────────────────────── */
+function drawWave(buf, canvasId, c1='#F7971E', c2='#FFD200') {
+    const cv  = $(canvasId);
+    const W   = cv.parentElement.clientWidth - 24 || 700;
+    cv.width  = W;
+    cv.height = 72;
+    const ctx  = cv.getContext('2d');
+    const data = buf.getChannelData(0);
+    const step = Math.max(1, Math.floor(data.length / W));
+    const mid  = cv.height / 2;
+
+    const g = ctx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,c1); g.addColorStop(1,c2);
+
+    ctx.clearRect(0,0,W,cv.height);
+    ctx.strokeStyle = g;
+    ctx.lineWidth   = 1.5;
+    ctx.globalAlpha = 0.88;
+
+    for (let x=0; x<W; x++) {
+        let lo=1, hi=-1;
+        const base = x*step;
+        for (let j=0; j<step; j++) {
+            const v = data[base+j]||0;
+            if (v<lo) lo=v; if (v>hi) hi=v;
+        }
+        ctx.beginPath();
+        ctx.moveTo(x,(1+lo)*mid);
+        ctx.lineTo(x,(1+hi)*mid);
+        ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+}
+
+/* ───────────────────────────────────────────
+   FILE INPUT / DRAG-AND-DROP
+─────────────────────────────────────────── */
+$('audioIn').addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+const dropArea = $('dropArea');
+dropArea.addEventListener('dragover',  e => { e.preventDefault(); dropArea.classList.add('over'); });
+dropArea.addEventListener('dragleave', ()  => dropArea.classList.remove('over'));
+dropArea.addEventListener('drop', e => {
+    e.preventDefault(); dropArea.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('audio/')) loadFile(f);
+    else alert('Please drop a valid audio file.');
+});
+
+/* ───────────────────────────────────────────
+   LOAD & DECODE FILE
+─────────────────────────────────────────── */
+async function loadFile(file) {
+    resetAll();
+    srcFile = file;
+
+    // large-file warning
+    $('sizeWarn').style.display = file.size > 20*1024*1024 ? 'flex' : 'none';
+
+    // set original player
+    if ($('player1').src.startsWith('blob:')) URL.revokeObjectURL($('player1').src);
+    $('player1').src = URL.createObjectURL(file);
+
+    // show card with initial info
+    $('origName').textContent = file.name.length>44 ? file.name.slice(0,41)+'…' : file.name;
+    $('origSize').textContent = fmtBytes(file.size);
+    $('origMeta').textContent = 'Decoding…';
+    $('origDur').textContent  = '…';
+    $('origSec').style.display = 'block';
+
+    try {
+        // decode audio
+        const ab  = await file.arrayBuffer();
+        const ctx = new AudioContext();
+        srcBuf    = await ctx.decodeAudioData(ab);
+        ctx.close();
+
+        // fill metadata
+        const sr  = srcBuf.sampleRate;
+        const ch  = srcBuf.numberOfChannels;
+        const dur = srcBuf.duration;
+        const estBR = Math.round(file.size*8/dur/1000);
+
+        $('origMeta').textContent = `${fmtHz(sr)} · ${ch===1?'Mono':'Stereo'} · ~${estBR} kbps`;
+        $('origDur').textContent  = fmtTime(dur);
+
+        // draw waveform
+        drawWave(srcBuf,'wave1');
+
+        // show settings & enable button
+        $('settingsSec').style.display = 'block';
+        $('doBtn').disabled = false;
+        $('settingsSec').scrollIntoView({behavior:'smooth',block:'nearest'});
+
+    } catch(err) {
+        $('origMeta').textContent = '⚠ Cannot decode this file. Try MP3 or WAV.';
+        console.error(err);
+    }
+}
+
+/* ───────────────────────────────────────────
+   PRESET SELECTION
+─────────────────────────────────────────── */
+document.querySelectorAll('.preset').forEach(el => {
+    el.addEventListener('click', () => {
+        document.querySelectorAll('.preset').forEach(p=>p.classList.remove('on'));
+        el.classList.add('on');
+        activeId = el.dataset.id;
+        $('customWrap').classList.toggle('show', activeId==='custom');
+    });
+});
+
+$('brRange').addEventListener('input', () => {
+    $('brVal').textContent = $('brRange').value + ' kbps';
+});
+
+/* ───────────────────────────────────────────
+   GET ACTIVE SETTINGS
+─────────────────────────────────────────── */
+function getSettings() {
+    if (activeId !== 'custom') return { ...PRESETS[activeId] };
+    return {
+        bitrate: parseInt($('brRange').value, 10),
+        sr:      parseInt($('srSel').value, 10),
+        ch:      $('chSel').value,
+    };
+}
+
+/* ───────────────────────────────────────────
+   FLOAT32 → INT16 (for lamejs)
+─────────────────────────────────────────── */
+function toInt16(f32) {
+    const out = new Int16Array(f32.length);
+    for (let i=0; i<f32.length; i++) {
+        const s = Math.max(-1, Math.min(1, f32[i]));
+        out[i]  = s<0 ? s*0x8000 : s*0x7FFF;
+    }
+    return out;
+}
+
+/* ───────────────────────────────────────────
+   CORE COMPRESS FUNCTION
+─────────────────────────────────────────── */
+$('doBtn').addEventListener('click', doCompress);
+
+async function doCompress() {
+    if (!srcBuf || !srcFile) return;
+
+    // check lamejs loaded
+    if (typeof lamejs === 'undefined') {
+        alert('MP3 encoder library failed to load.\nCheck your internet connection and refresh.');
+        return;
+    }
+
+    const cfg = getSettings();
+    const targetBR  = cfg.bitrate;
+    const targetSR  = cfg.sr;
+    let   targetCH  = cfg.ch === 'auto'
+                      ? Math.min(2, srcBuf.numberOfChannels)
+                      : parseInt(cfg.ch, 10);
+    targetCH = Math.max(1, Math.min(2, targetCH));
+
+    // lock UI
+    $('doBtn').disabled = true;
+    $('doBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Compressing…';
+    $('progWrap').style.display  = 'block';
+    $('resultWrap').style.display = 'none';
+    if (outURL) { URL.revokeObjectURL(outURL); outURL = null; }
+
+    try {
+        /* ── STEP 1: Resample via OfflineAudioContext ── */
+        setP('Resampling audio…', 15, `${fmtHz(srcBuf.sampleRate)} → ${fmtHz(targetSR)}`);
+        await tick();
+
+        const frames    = Math.ceil(srcBuf.duration * targetSR);
+        const offCtx    = new OfflineAudioContext(targetCH, frames, targetSR);
+        const srcNode   = offCtx.createBufferSource();
+        srcNode.buffer  = srcBuf;
+
+        // Connect directly — WebAudio handles channel up/down mix automatically
+        srcNode.connect(offCtx.destination);
+        srcNode.start(0);
+
+        const rendered = await offCtx.startRendering();
+
+        /* ── STEP 2: Extract PCM channels ── */
+        setP('Extracting PCM…', 38, '');
+        await tick();
+
+        const leftF32  = rendered.getChannelData(0);
+        const rightF32 = rendered.numberOfChannels > 1 ? rendered.getChannelData(1) : null;
+
+        const leftI16  = toInt16(leftF32);
+        const rightI16 = rightF32 ? toInt16(rightF32) : null;
+
+        /* ── STEP 3: Encode to MP3 with lamejs ── */
+        setP('Encoding to MP3…', 48, `${targetBR} kbps · ${fmtHz(targetSR)} · ${targetCH===1?'Mono':'Stereo'}`);
+        await tick();
+
+        const enc      = new lamejs.Mp3Encoder(targetCH, targetSR, targetBR);
+        const parts    = [];
+        const BLOCK    = 1152;   // MP3 frame size
+        const total    = leftI16.length;
+        const YIELD_AT = 80;     // yield every 80 blocks (~0.8s of decoded audio)
+
+        for (let i=0; i<total; i+=BLOCK) {
+            const end = Math.min(i+BLOCK, total);
+            const L   = leftI16.subarray(i, end);
+
+            let chunk;
+            if (targetCH === 2 && rightI16) {
+                const R = rightI16.subarray(i, end);
+                chunk   = enc.encodeBuffer(L, R);
+            } else {
+                chunk   = enc.encodeBuffer(L);
+            }
+
+            if (chunk && chunk.length > 0) parts.push(new Uint8Array(chunk));
+
+            // yield to keep UI alive + update bar
+            if (Math.floor(i/BLOCK) % YIELD_AT === 0) {
+                const done = Math.round(i/total*100);
+                setP('Encoding to MP3…', 48 + done*0.48, `${done}% encoded…`);
+                await tick();
+            }
+        }
+
+        /* ── STEP 4: Flush remaining frames ── */
+        setP('Finalising…', 98, '');
+        await tick();
+
+        const tail = enc.flush();
+        if (tail && tail.length > 0) parts.push(new Uint8Array(tail));
+
+        /* ── STEP 5: Build Blob ── */
+        const blob = new Blob(parts, { type: 'audio/mpeg' });
+        setP('Done!', 100, '');
+        await new Promise(r=>setTimeout(r,350));
+
+        $('progWrap').style.display = 'none';
+        showResult(blob, targetSR, targetCH);
+
+    } catch(err) {
+        $('progWrap').style.display = 'none';
+        console.error('Compression error:', err);
+        alert('Compression failed:\n' + err.message + '\n\nTry a different file or quality preset.');
+    }
+
+    $('doBtn').disabled = false;
+    $('doBtn').innerHTML = '<i class="fas fa-compress-alt"></i> Compress Audio';
+}
+
+/* ───────────────────────────────────────────
+   SHOW RESULT
+─────────────────────────────────────────── */
+async function showResult(blob, targetSR, targetCH) {
+    // revoke old blob
+    if (outURL) URL.revokeObjectURL(outURL);
+    outURL = URL.createObjectURL(blob);
+
+    // stats
+    const origSz  = srcFile.size;
+    const newSz   = blob.size;
+    const pct     = Math.round((1 - newSz/origSz)*100);
+
+    $('rOS').textContent  = fmtBytes(origSz);
+    $('rOSR').textContent = fmtHz(srcBuf.sampleRate);
+    $('rOCH').textContent = srcBuf.numberOfChannels===1 ? 'Mono' : 'Stereo';
+
+    $('rNS').textContent  = fmtBytes(newSz);
+    $('rNSR').textContent = fmtHz(targetSR);
+    $('rNCH').textContent = targetCH===1 ? 'Mono' : 'Stereo';
+
+    $('rSaved').textContent = pct > 0 ? `${pct}% smaller` : 'Re-encoded';
+
+    // player
+    if ($('player2').src.startsWith('blob:')) URL.revokeObjectURL($('player2').src);
+    $('player2').src = outURL;
+
+    // download link
+    const base = srcFile.name.replace(/\.[^.]+$/, '');
+    $('dlLink').href     = outURL;
+    $('dlLink').download = base + '_compressed.mp3';
+
+    // compressed waveform (decode the new MP3 to draw it)
+    try {
+        const tmpAB  = await blob.arrayBuffer();
+        const tmpCtx = new AudioContext();
+        const tmpBuf = await tmpCtx.decodeAudioData(tmpAB);
+        tmpCtx.close();
+        drawWave(tmpBuf, 'wave2', '#FFD200', '#F7971E');
+    } catch(_) { /* waveform is optional — skip silently */ }
+
+    $('resultWrap').style.display = 'block';
+    $('resultWrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ───────────────────────────────────────────
+   RESET
+─────────────────────────────────────────── */
+$('resetBtn').addEventListener('click', resetAll);
+
+function resetAll() {
+    srcFile = null; srcBuf  = null;
+    if (outURL) { URL.revokeObjectURL(outURL); outURL = null; }
+
+    $('audioIn').value = '';
+    $('origSec').style.display     = 'none';
+    $('settingsSec').style.display = 'none';
+    $('progWrap').style.display    = 'none';
+    $('resultWrap').style.display  = 'none';
+    $('sizeWarn').style.display    = 'none';
+    $('doBtn').disabled            = true;
+
+    // stop players
+    $('player1').src = ''; $('player2').src = '';
+
+    $('dropArea').scrollIntoView({behavior:'smooth'});
+}
+</script>
+
+</body>
+</html>
