@@ -1,0 +1,9 @@
+{
+  "name": "shrinknest",
+  "version": "1.0.0",
+  "description": "ShrinkNest - Compress Anything. Store Everything.",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  }
+}
