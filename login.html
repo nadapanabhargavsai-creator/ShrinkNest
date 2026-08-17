@@ -187,11 +187,13 @@ loginForm.addEventListener("submit", async (e) => {
 
     } else {
 
+        console.error("Login failed:", result);
         if (result.code === "auth/invalid-email") {
             document.getElementById("emailError").textContent = result.message;
         } else {
             document.getElementById("passwordError").textContent = result.message;
         }
+        alert("Login failed: " + result.message);
 
     }
 
@@ -212,10 +214,8 @@ googleBtn.addEventListener("click", async () => {
 
         googleBtn.disabled = false;
         googleBtn.innerHTML = '<i class="fab fa-google"></i> Continue with Google';
-
-        if (!result.message.toLowerCase().includes("closed") && !result.message.toLowerCase().includes("cancelled")) {
-            alert(result.message);
-        }
+        console.error("Google login failed:", result);
+        alert("Google Login failed: " + result.message);
 
     }
 

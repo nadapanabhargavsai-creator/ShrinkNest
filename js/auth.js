@@ -52,8 +52,12 @@ export function getFriendlyAuthErrorMessage(error) {
             return "This sign-in method is disabled in Firebase Console.";
         case "auth/popup-closed-by-user":
             return "Google sign-in popup was closed before completing.";
+        case "auth/popup-blocked":
+            return "Google sign-in popup was blocked by your browser. Please allow popups for this site.";
         case "auth/cancelled-popup-request":
             return "Google sign-in popup was cancelled.";
+        case "auth/account-exists-with-different-credential":
+            return "An account already exists with the same email address but different sign-in credentials.";
         case "auth/unauthorized-domain":
             return "Domain not authorized in Firebase Console (Authentication > Settings > Authorized Domains).";
         case "auth/network-request-failed":

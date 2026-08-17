@@ -264,13 +264,13 @@ form.addEventListener("submit", async (e) => {
 
     } else {
 
+        console.error("Signup failed:", result);
         if (result.code === "auth/email-already-in-use" || result.code === "auth/invalid-email") {
             document.getElementById("emailError").textContent = result.message;
         } else if (result.code === "auth/weak-password") {
             document.getElementById("passwordError").textContent = result.message;
-        } else {
-            alert(result.message);
         }
+        alert("Sign Up failed: " + result.message);
 
     }
 
@@ -293,10 +293,8 @@ googleSignupBtn.addEventListener("click", async () => {
 
         googleSignupBtn.disabled = false;
         googleSignupBtn.innerHTML = '<i class="fab fa-google"></i> Sign Up with Google';
-
-        if (!result.message.toLowerCase().includes("closed") && !result.message.toLowerCase().includes("cancelled")) {
-            alert(result.message);
-        }
+        console.error("Google signup failed:", result);
+        alert("Google Sign Up failed: " + result.message);
 
     }
 
