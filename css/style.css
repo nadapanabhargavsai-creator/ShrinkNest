@@ -236,6 +236,29 @@ ul{
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
+.btn-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 77, 79, 0.08);
+    color: #ff4d4f !important;
+    border: 1px solid rgba(255, 77, 79, 0.25);
+    padding: 7px 16px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-logout:hover {
+    background: #ff4d4f;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+}
+
 /* ---------- HAMBURGER ---------- */
 
 .hamburger{

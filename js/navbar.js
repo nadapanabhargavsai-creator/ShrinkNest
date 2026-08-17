@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginNavItem = document.getElementById("loginNavItem");
     const signupNavItem = document.getElementById("signupNavItem");
     const profileNavItem = document.getElementById("profileNavItem");
+    const logoutNavItem = document.getElementById("logoutNavItem");
     const navUserName = document.getElementById("navUserName");
     const navUserPhoto = document.getElementById("navUserPhoto");
     const logoutBtn = document.getElementById("logoutBtn");
@@ -49,6 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (profileNavItem) {
                 profileNavItem.style.display = "inline-flex";
+            }
+            if (logoutNavItem) {
+                logoutNavItem.style.display = "inline-flex";
             }
             if (logoutBtn) {
                 logoutBtn.style.display = "inline-flex";
@@ -87,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (loginNavItem) loginNavItem.style.display = "inline-flex";
             if (signupNavItem) signupNavItem.style.display = "inline-flex";
             if (profileNavItem) profileNavItem.style.display = "none";
+            if (logoutNavItem) logoutNavItem.style.display = "none";
             if (logoutBtn) logoutBtn.style.display = "none";
         }
     });
