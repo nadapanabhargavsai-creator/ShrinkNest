@@ -194,8 +194,13 @@ function createSkeletonCard(idx) {
         </div>
         <div class="page-footer">
             <span class="page-num">Page ${idx + 1}</span>
-            <div class="page-check" id="pageCheck_${idx}" data-check="1">
-                ${state.selected.has(idx) ? '<span style="color:#fff;font-size:11px;font-weight:700;">✓</span>' : ''}
+            <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" class="page-card-edit-btn" data-edit="1" title="Open Page Editor">
+                    <i class="fas fa-pen-to-square"></i>
+                </button>
+                <div class="page-check" id="pageCheck_${idx}" data-check="1" title="Select / Deselect">
+                    ${state.selected.has(idx) ? '<span style="color:#fff;font-size:11px;font-weight:700;">✓</span>' : ''}
+                </div>
             </div>
         </div>
     `;
@@ -263,7 +268,7 @@ function updateRotationBadge(card, rotation) {
 }
 
 /* ─────────────────────────────────────────
-   CARD EVENTS — click body → page editor
+   CARD EVENTS — click/dblclick → page editor
    click checkbox → select/deselect
 ───────────────────────────────────────── */
 function bindCardEvents(card, idx) {
@@ -274,8 +279,14 @@ function bindCardEvents(card, idx) {
             toggleSelect(idx, card);
             return;
         }
-        // Any other click → open page editor
+        // Any other click (or edit button) → open page editor
         openPageEditor(idx);
+    });
+
+    card.addEventListener('dblclick', e => {
+        if (!e.target.closest('[data-check]')) {
+            openPageEditor(idx);
+        }
     });
 }
 

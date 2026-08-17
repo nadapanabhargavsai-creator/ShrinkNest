@@ -428,6 +428,28 @@
     color: #fff;
 }
 
+.page-card-edit-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    background: #f4f5ff;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    transition: 0.18s;
+}
+
+.page-card-edit-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+
 .page-rotation-badge {
     position: absolute;
     top: 7px;
@@ -797,6 +819,20 @@
 }
 
 @media (max-width: 480px) {
+    .pages-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 10px;
+    }
+
+    .upload-zone {
+        padding: 36px 16px;
+    }
+
+    .upload-zone h2 {
+        font-size: 18px;
+    }
+}
+
 /* ── Page Card Enhancements (Hover Overlay & Badge) ── */
 .page-annot-badge {
     position: absolute;
