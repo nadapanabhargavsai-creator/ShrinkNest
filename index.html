@@ -51,11 +51,18 @@
 
                 <li><a href="#tools">Tools</a></li>
 
-                <li><a href="login.html">Login</a></li>
+                <li id="loginNavItem"><a href="login.html" id="loginBtn">Login</a></li>
 
-                <li>
-                    <a href="signup.html" class="signup-btn">
+                <li id="signupNavItem">
+                    <a href="signup.html" class="signup-btn" id="signupBtn">
                         Sign Up
+                    </a>
+                </li>
+
+                <li id="profileNavItem" style="display:none;">
+                    <a href="dashboard.html" class="profile-nav-btn" id="profileBtn">
+                        <img id="navUserPhoto" src="assets/images/default-avatar.svg" alt="" referrerpolicy="no-referrer" class="nav-avatar">
+                        <span id="navUserName">Account</span>
                     </a>
                 </li>
 
@@ -434,7 +441,7 @@
 
 
 <!-- Navbar JS -->
-
+<script type="module" src="js/navbar.js"></script>
 <script>
 
 const hamburger = document.getElementById("hamburger");
