@@ -176,7 +176,14 @@ loginForm.addEventListener("submit", async (e) => {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
 
+    const submitBtn = loginForm.querySelector("button[type='submit']");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Logging in...";
+
     const result = await login(email, password);
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Login";
 
     if (result.success) {
 
@@ -184,16 +191,10 @@ loginForm.addEventListener("submit", async (e) => {
 
     } else {
 
-        if (result.message.toLowerCase().includes("email")) {
-
-            document.getElementById("emailError").textContent =
-                result.message;
-
+        if (result.code === "auth/invalid-email") {
+            document.getElementById("emailError").textContent = result.message;
         } else {
-
-            document.getElementById("passwordError").textContent =
-                result.message;
-
+            document.getElementById("passwordError").textContent = result.message;
         }
 
     }
@@ -213,13 +214,11 @@ googleBtn.addEventListener("click", async () => {
 
     } else {
 
-        // Re-enable button if login failed or was cancelled
         googleBtn.disabled = false;
         googleBtn.innerHTML = '<i class="fab fa-google"></i> Continue with Google';
 
-        // Only show error for real failures (not user closing the popup)
-        if (!result.message.includes("popup-closed") && !result.message.includes("cancelled")) {
-            alert("Google login failed: " + result.message);
+        if (!result.message.toLowerCase().includes("closed") && !result.message.toLowerCase().includes("cancelled")) {
+            alert(result.message);
         }
 
     }

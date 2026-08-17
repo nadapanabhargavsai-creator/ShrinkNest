@@ -293,34 +293,16 @@ document.addEventListener("click", () => {
 settingsDropdown.addEventListener("click", (e) => e.stopPropagation());
 
 // ── Avatar helpers ────────────────────────
-function getInitials(name) {
-    if (!name) return "?";
-    return name.trim().split(/\s+/)
-        .map(w => w[0].toUpperCase())
-        .slice(0, 2)
-        .join("");
-}
-
-const AVATAR_COLORS = [
-    "#6C63FF","#00C6AE","#FF6584","#F5A623","#4A90D9","#7ED321"
-];
-
-function colorForName(name) {
-    if (!name) return AVATAR_COLORS[0];
-    let h = 0;
-    for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xFFFF;
-    return AVATAR_COLORS[h % AVATAR_COLORS.length];
-}
+const DEFAULT_AVATAR_PATH = "assets/images/default-avatar.svg";
 
 function renderAvatar(photoURL, displayName) {
     const el = document.getElementById("userAvatar");
     if (!el) return;
+
     if (photoURL) {
-        el.innerHTML = `<img src="${photoURL}" alt="${displayName || 'User'}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        el.innerHTML = `<img src="${photoURL}" alt="" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PATH}';">`;
     } else {
-        const initials = getInitials(displayName);
-        const bg       = colorForName(displayName);
-        el.innerHTML   = `<span style="background:${bg};width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;letter-spacing:1px;">${initials}</span>`;
+        el.innerHTML = `<img src="${DEFAULT_AVATAR_PATH}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">`;
     }
 }
 

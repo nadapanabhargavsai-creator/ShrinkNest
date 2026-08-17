@@ -248,11 +248,18 @@ form.addEventListener("submit", async (e) => {
 
     }
 
+    const submitBtn = form.querySelector("button[type='submit']");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating Account...";
+
     const result = await signup(
         data.name,
         data.email,
         data.password
     );
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Create Account";
 
     if (result.success) {
 
@@ -260,16 +267,24 @@ form.addEventListener("submit", async (e) => {
 
     } else {
 
-        alert(result.message);
+        if (result.code === "auth/email-already-in-use" || result.code === "auth/invalid-email") {
+            document.getElementById("emailError").textContent = result.message;
+        } else if (result.code === "auth/weak-password") {
+            document.getElementById("passwordError").textContent = result.message;
+        } else {
+            alert(result.message);
+        }
 
     }
 
 });
 
 // Google Signup
-document
-.getElementById("googleSignup")
-.addEventListener("click", async () => {
+const googleSignupBtn = document.getElementById("googleSignup");
+googleSignupBtn.addEventListener("click", async () => {
+
+    googleSignupBtn.disabled = true;
+    googleSignupBtn.innerHTML = '<i class="fab fa-google"></i> Connecting...';
 
     const result = await googleLogin();
 
@@ -279,7 +294,12 @@ document
 
     } else {
 
-        alert(result.message);
+        googleSignupBtn.disabled = false;
+        googleSignupBtn.innerHTML = '<i class="fab fa-google"></i> Sign Up with Google';
+
+        if (!result.message.toLowerCase().includes("closed") && !result.message.toLowerCase().includes("cancelled")) {
+            alert(result.message);
+        }
 
     }
 
