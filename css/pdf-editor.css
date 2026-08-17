@@ -1,0 +1,866 @@
+/* ==========================================
+   SHRINKNEST PDF EDITOR STYLES
+   File: css/pdf-editor.css
+========================================== */
+
+/* ── Page Shell ── */
+.pdf-editor-page {
+    min-height: calc(100vh - 80px);
+    background: var(--background);
+    padding: 32px 0 60px;
+}
+
+/* ── Upload Zone ── */
+.upload-zone {
+    border: 2.5px dashed rgba(108, 99, 255, 0.35);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(8px);
+    padding: 52px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.25s, background 0.25s, transform 0.18s;
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+    border-color: var(--primary);
+    background: rgba(108, 99, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+.upload-icon {
+    font-size: 48px;
+    color: var(--primary);
+    margin-bottom: 16px;
+    display: block;
+    opacity: 0.85;
+}
+
+.upload-zone h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.upload-zone p {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 22px;
+}
+
+.upload-zone .btn-choose {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 15px;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(108, 99, 255, 0.28);
+}
+
+.upload-hint {
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: #aaa;
+}
+
+/* ── Editor Workspace ── */
+.editor-workspace {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.editor-workspace.visible {
+    display: flex;
+}
+
+/* ── File Bar ── */
+.file-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 14px 20px;
+    box-shadow: var(--shadow);
+}
+
+.file-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.file-bar-left .file-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.file-bar-left h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-bar-left p {
+    font-size: 12px;
+    color: #888;
+}
+
+.btn-add-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    background: transparent;
+    transition: 0.25s;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-add-pdf input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.btn-add-pdf:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ── Toolbar ── */
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 12px 18px;
+    box-shadow: var(--shadow);
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 28px;
+    background: #e0e0e0;
+    margin: 0 4px;
+}
+
+.tb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #f4f5ff;
+    color: var(--text);
+    transition: 0.2s;
+    white-space: nowrap;
+}
+
+.tb-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.tb-btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+.tb-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+}
+
+.tb-btn.danger:hover:not(:disabled) {
+    background: #ff4d4f;
+    border-color: #ff4d4f;
+    color: #fff;
+}
+
+.tb-btn.success {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: #fff;
+    border-color: transparent;
+    padding: 8px 20px;
+}
+
+.tb-btn.success:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(17, 153, 142, 0.3);
+}
+
+/* ── Split Range Panel ── */
+.split-panel {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: #f0f0ff;
+    border-radius: 12px;
+    flex-wrap: wrap;
+}
+
+.split-panel.visible {
+    display: flex;
+}
+
+.split-panel label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.split-panel input {
+    flex: 1;
+    min-width: 180px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(108, 99, 255, 0.35);
+    font-size: 13px;
+    outline: none;
+    font-family: 'Poppins', sans-serif;
+    transition: 0.2s;
+}
+
+.split-panel input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12);
+}
+
+/* ── Thumbnail Grid ── */
+.pages-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pages-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+}
+
+.pages-counter {
+    font-size: 13px;
+    color: #999;
+}
+
+.pages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    min-height: 200px;
+}
+
+/* ── Individual Page Card ── */
+.page-card {
+    position: relative;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+    user-select: none;
+    overflow: hidden;
+}
+
+.page-card:hover {
+    box-shadow: 0 8px 28px rgba(108, 99, 255, 0.18);
+    transform: translateY(-3px);
+}
+
+.page-card.selected {
+    box-shadow: 0 0 0 3px var(--primary), 0 8px 24px rgba(108, 99, 255, 0.22);
+}
+
+.page-card.dragging {
+    opacity: 0.45;
+    transform: scale(0.97);
+}
+
+.page-card.drag-target {
+    outline: 2.5px dashed var(--primary);
+    outline-offset: 2px;
+}
+
+.page-thumb {
+    width: 100%;
+    display: block;
+    border-radius: 10px 10px 0 0;
+    background: #f5f5f5;
+    transition: transform 0.3s ease;
+    transform-origin: center;
+}
+
+.page-thumb-wrap {
+    overflow: hidden;
+    border-radius: 10px 10px 0 0;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 170px;
+}
+
+.page-thumb-wrap canvas {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.page-thumb-loading {
+    width: 100%;
+    min-height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f2ff;
+}
+
+.page-thumb-loading .spin {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(108, 99, 255, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: peSpin 0.8s linear infinite;
+}
+
+.page-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.page-num {
+    font-size: 12px;
+    font-weight: 600;
+    color: #777;
+}
+
+.page-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.18s;
+    background: #fff;
+}
+
+.page-card.selected .page-check {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.page-card.selected .page-check::after {
+    content: "✓";
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.page-rotation-badge {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    background: rgba(108, 99, 255, 0.85);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    display: none;
+}
+
+.page-card[data-rotation]:not([data-rotation="0"]) .page-rotation-badge {
+    display: block;
+}
+
+/* ── Progress Panel ── */
+.progress-panel {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 32px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.progress-panel.visible {
+    display: flex;
+}
+
+.progress-ring {
+    width: 64px;
+    height: 64px;
+    border: 5px solid rgba(108, 99, 255, 0.18);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: peSpin 1s linear infinite;
+}
+
+.progress-panel p {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.progress-panel small {
+    color: #999;
+    font-size: 13px;
+}
+
+/* ── Result Panel ── */
+.result-panel {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 36px 24px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.result-panel.visible {
+    display: flex;
+}
+
+.result-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(17, 153, 142, 0.28);
+}
+
+.result-panel h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.result-panel p {
+    color: #888;
+    font-size: 14px;
+}
+
+.result-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* ── Download Button ── */
+.btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 30px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(108, 99, 255, 0.3);
+    transition: 0.25s;
+    text-decoration: none;
+}
+
+.btn-download:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(108, 99, 255, 0.4);
+}
+
+.btn-edit-again {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 26px;
+    border-radius: 50px;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 15px;
+    background: transparent;
+    cursor: pointer;
+    transition: 0.25s;
+}
+
+.btn-edit-again:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ── Save Bar (sticky bottom) ── */
+.save-bar {
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    padding: 14px 22px;
+    box-shadow: 0 12px 40px rgba(108, 99, 255, 0.18);
+    margin-top: 16px;
+}
+
+.save-bar-left {
+    font-size: 13.5px;
+    color: #666;
+    font-weight: 500;
+}
+
+.save-bar-left strong {
+    color: var(--primary);
+}
+
+.btn-save-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 32px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(108, 99, 255, 0.3);
+    transition: 0.25s;
+}
+
+.btn-save-download:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 36px rgba(108, 99, 255, 0.42);
+}
+
+.btn-save-download:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Confirm Modal ── */
+.pe-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.pe-modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.pe-modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px 28px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+    transform: scale(0.92);
+    transition: transform 0.2s;
+}
+
+.pe-modal-overlay.open .pe-modal {
+    transform: scale(1);
+}
+
+.pe-modal-icon {
+    font-size: 36px;
+    margin-bottom: 16px;
+}
+
+.pe-modal h3 {
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.pe-modal p {
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.pe-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.pe-modal .btn-cancel {
+    padding: 11px 24px;
+    border-radius: 50px;
+    border: 2px solid #ddd;
+    color: #666;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    transition: 0.2s;
+}
+
+.pe-modal .btn-cancel:hover {
+    border-color: #aaa;
+}
+
+.pe-modal .btn-confirm {
+    padding: 11px 24px;
+    border-radius: 50px;
+    background: #ff4d4f;
+    color: #fff;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.pe-modal .btn-confirm:hover {
+    background: #d9363e;
+}
+
+/* ── Toast notification ── */
+.pe-toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(45, 45, 45, 0.92);
+    color: #fff;
+    padding: 11px 24px;
+    border-radius: 50px;
+    font-size: 13.5px;
+    font-weight: 500;
+    z-index: 600;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.pe-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ── Error banner ── */
+.pe-error-banner {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff2f0;
+    border: 1.5px solid #ffccc7;
+    border-radius: 14px;
+    color: #cf1322;
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.pe-error-banner.visible {
+    display: flex;
+}
+
+.pe-error-banner i {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+/* ── Keyframes ── */
+@keyframes peSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .editor-toolbar {
+        gap: 6px;
+        padding: 10px 12px;
+    }
+
+    .tb-btn {
+        padding: 7px 10px;
+        font-size: 12px;
+    }
+
+    .pages-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 12px;
+    }
+
+    .save-bar {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .file-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .pages-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 10px;
+    }
+
+    .upload-zone {
+        padding: 36px 16px;
+    }
+
+    .upload-zone h2 {
+        font-size: 18px;
+    }
+}
+
+/* ── Dark mode ── */
+html[data-theme="dark"] .pdf-editor-page {
+    background: var(--background);
+}
+
+html[data-theme="dark"] .upload-zone {
+    background: rgba(30, 30, 50, 0.7);
+    border-color: rgba(108, 99, 255, 0.4);
+}
+
+html[data-theme="dark"] .page-card {
+    background: #1e1e30;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="dark"] .page-footer {
+    background: rgba(30, 30, 50, 0.95);
+}
+
+html[data-theme="dark"] .editor-toolbar,
+html[data-theme="dark"] .file-bar,
+html[data-theme="dark"] .save-bar {
+    background: rgba(30, 30, 50, 0.92);
+}
+
+html[data-theme="dark"] .tb-btn {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ddd;
+}
+
+html[data-theme="dark"] .pe-modal {
+    background: #1e1e30;
+    color: #eee;
+}
+
+html[data-theme="dark"] .pe-modal p {
+    color: #aaa;
+}
+
+html[data-theme="dark"] .result-panel,
+html[data-theme="dark"] .progress-panel {
+    background: rgba(30, 30, 50, 0.92);
+}
+
+html[data-theme="dark"] .split-panel {
+    background: rgba(108, 99, 255, 0.1);
+}
+
+html[data-theme="dark"] .split-panel input {
+    background: #1e1e30;
+    color: #eee;
+    border-color: rgba(108, 99, 255, 0.4);
+}
