@@ -17,8 +17,347 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/tools.css">
+    <link rel="stylesheet" href="../css/style.css?v=2.0">
+    <link rel="stylesheet" href="../css/tools.css?v=2.0">
+
+        /* ── PDF Upload & Drop Area ── */
+        .pdf-upload-section {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        /* Override upload-box with vivid premium colors */
+        .pdf-drop-zone.upload-box,
+        .pdf-drop-zone {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100%;
+            border: 2.5px dashed #7c71f5 !important;
+            border-radius: 22px !important;
+            padding: 44px 24px 34px !important;
+            text-align: center;
+            background: linear-gradient(145deg, #eef0ff 0%, #f0f4ff 50%, #e8f0fe 100%) !important;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 8px 30px rgba(108, 99, 255, 0.12) !important;
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .pdf-drop-zone.upload-box:hover,
+        .pdf-drop-zone:hover {
+            background: linear-gradient(145deg, #dfe3ff 0%, #e2eaff 50%, #d4e0ff 100%) !important;
+            border-color: #6C63FF !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 18px 40px rgba(108, 99, 255, 0.2) !important;
+        }
+
+        .pdf-drop-zone.dragover {
+            background: linear-gradient(145deg, #dff3ff 0%, #e0f4ff 100%) !important;
+            border-color: #00c6ff !important;
+            border-style: solid !important;
+            transform: scale(1.015) !important;
+            box-shadow: 0 0 0 4px rgba(0, 198, 255, 0.3), 0 18px 40px rgba(108, 99, 255, 0.2) !important;
+        }
+
+        /* Centered PDF Icon Badge */
+        .pdf-icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #6C63FF 0%, #4F46E5 55%, #00c6ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #ffffff;
+            margin-bottom: 16px;
+            box-shadow: 0 12px 28px rgba(108, 99, 255, 0.4);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
+        }
+
+        .pdf-drop-zone:hover .pdf-icon-wrap {
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 16px 34px rgba(108, 99, 255, 0.5);
+        }
+
+        .pdf-drop-zone.dragover .pdf-icon-wrap {
+            transform: scale(1.12);
+        }
+
+        /* Headings & Subtitles */
+        .pdf-drop-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #2d2472;
+            margin: 0 0 5px 0;
+            letter-spacing: -0.2px;
+        }
+
+        .pdf-drop-sub {
+            font-size: 14px;
+            color: #5a6380;
+            margin: 0 0 16px 0;
+        }
+
+        /* Modern Primary Browse Button */
+        .pdf-browse-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            background: linear-gradient(135deg, #6C63FF 0%, #4F46E5 100%);
+            color: #ffffff;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 8px 24px rgba(108, 99, 255, 0.38);
+            margin-bottom: 16px;
+            transition: all 0.25s ease;
+            letter-spacing: 0.2px;
+        }
+
+        .pdf-drop-zone:hover .pdf-browse-btn {
+            background: linear-gradient(135deg, #5B52E8 0%, #4338CA 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(108, 99, 255, 0.5);
+        }
+
+        /* Helper Text Pill */
+        .pdf-helper-text {
+            font-size: 12px;
+            color: #4f46e5;
+            background: rgba(108, 99, 255, 0.1);
+            border: 1px solid rgba(108, 99, 255, 0.25);
+            padding: 6px 16px;
+            border-radius: 50px;
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .pdf-helper-text i {
+            font-size: 11px;
+            color: #6C63FF;
+        }
+
+        .pdf-drop-zone input[type="file"] {
+            display: none;
+        }
+
+        /* ── File Info Panel ── */
+        .pdf-file-info {
+            margin-top: 16px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            background: #ffffff;
+            border: 1px solid #dde2f5;
+            border-left: 4px solid #6C63FF;
+            box-shadow: 0 4px 16px rgba(108, 99, 255, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .file-info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-info-icon {
+            font-size: 16px;
+            color: #6C63FF;
+            flex-shrink: 0;
+        }
+
+        .file-info-text {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .file-info-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #2d2472;
+            flex-shrink: 0;
+        }
+
+        .file-info-value {
+            font-size: 13px;
+            color: #5a6380;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-info-divider {
+            width: 1px;
+            height: 24px;
+            background: #dde2f5;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .pdf-drop-zone {
+                padding: 36px 20px 28px;
+            }
+
+            .pdf-icon-wrap {
+                width: 58px;
+                height: 58px;
+                font-size: 25px;
+                border-radius: 16px;
+                margin-bottom: 14px;
+            }
+
+            .pdf-drop-title {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .tool-page {
+                padding: 30px 0 50px;
+            }
+
+            .tool-container {
+                padding: 24px 16px;
+                border-radius: 20px;
+            }
+
+            .tool-title {
+                margin-bottom: 24px;
+            }
+
+            .tool-title h1 {
+                font-size: 24px;
+                margin-bottom: 6px;
+            }
+
+            .tool-title p {
+                font-size: 13px;
+            }
+
+            .pdf-drop-zone {
+                padding: 28px 14px 22px;
+                border-radius: 18px;
+            }
+
+            .pdf-icon-wrap {
+                width: 50px;
+                height: 50px;
+                font-size: 22px;
+                border-radius: 14px;
+                margin-bottom: 12px;
+            }
+
+            .pdf-drop-title {
+                font-size: 18px;
+                margin-bottom: 3px;
+            }
+
+            .pdf-drop-sub {
+                font-size: 13px;
+                margin-bottom: 12px;
+            }
+
+            .pdf-browse-btn {
+                padding: 9px 22px;
+                font-size: 13px;
+                margin-bottom: 14px;
+            }
+
+            .pdf-helper-text {
+                font-size: 11px;
+                text-align: center;
+                justify-content: center;
+            }
+
+            .pdf-file-info {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                padding: 12px 14px;
+                border-radius: 12px;
+            }
+
+            .file-info-item {
+                width: 100%;
+                justify-content: flex-start;
+                gap: 8px;
+            }
+
+            .file-info-text {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .file-info-label {
+                font-size: 12px;
+            }
+
+            .file-info-value {
+                font-size: 12px;
+                max-width: 180px;
+            }
+
+            .file-info-divider {
+                display: none;
+            }
+
+            .controls {
+                margin-top: 22px;
+                gap: 16px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 22px;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+                padding: 13px 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .tool-container {
+                padding: 20px 12px;
+            }
+
+            .pdf-drop-zone {
+                padding: 22px 10px 18px;
+            }
+
+            .pdf-drop-title {
+                font-size: 16px;
+            }
+
+            .pdf-browse-btn {
+                padding: 8px 18px;
+                font-size: 12px;
+            }
+
+            .file-info-value {
+                max-width: 130px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -51,29 +390,49 @@
 
             </div>
 
-            <!-- Upload -->
-            <label class="upload-box">
+            <!-- Upload & File Info Section -->
+            <div class="pdf-upload-section">
+                <!-- Drop Zone -->
+                <label class="pdf-drop-zone upload-box" id="uploadBox" for="pdfFile">
+                    <div class="pdf-icon-wrap">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
 
-                <i class="fa-solid fa-file-pdf fa-3x"></i>
+                    <h3 class="pdf-drop-title">Drag &amp; Drop PDF</h3>
+                    <p class="pdf-drop-sub">or click to browse</p>
 
-                <h3>Drag & Drop PDF</h3>
+                    <span class="pdf-browse-btn">
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i> Browse PDF
+                    </span>
 
-                <p>or click to browse</p>
+                    <p class="pdf-helper-text">
+                        <i class="fa-solid fa-shield-halved"></i> PDF files only • Secure &amp; private
+                    </p>
 
-                <input
-                    type="file"
-                    id="pdfFile"
-                    accept=".pdf">
+                    <input
+                        type="file"
+                        id="pdfFile"
+                        accept=".pdf">
+                </label>
 
-            </label>
-
-            <!-- File Info -->
-            <div class="file-info">
-
-                <p><strong>File:</strong> <span id="fileName">No file selected</span></p>
-
-                <p><strong>Original Size:</strong> <span id="originalSize">0 KB</span></p>
-
+                <!-- Clean File Information Panel -->
+                <div class="file-info pdf-file-info">
+                    <div class="file-info-item">
+                        <i class="fa-regular fa-file-lines file-info-icon"></i>
+                        <div class="file-info-text">
+                            <span class="file-info-label">File:</span>
+                            <span class="file-info-value" id="fileName">No file selected</span>
+                        </div>
+                    </div>
+                    <div class="file-info-divider"></div>
+                    <div class="file-info-item">
+                        <i class="fa-solid fa-weight-hanging file-info-icon"></i>
+                        <div class="file-info-text">
+                            <span class="file-info-label">Original Size:</span>
+                            <span class="file-info-value" id="originalSize">0 KB</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Compression Mode Selection -->
